@@ -158,7 +158,7 @@
     $('.split-options').style.opacity = smooth(range(t,6.65,7.15));
     $('.split-options').style.transform = `translate(-50%,${mix(-25,-48,endP)}%)`;
     $('.split-contours').style.transform = `rotate(${mix(-3,0,endP)}deg) scale(${mix(1.1,1,endP)})`;
-    const isDark = menuOpen || t>2.5 && t<6.65;
+    const isDark = menuOpen || galleryEnter>.94 && splitEnter<.94;
     document.documentElement.style.setProperty('--header-color',isDark?'#f3f3eb':'#292d23');
     header.querySelector('.center-mark').style.opacity = 1-range(t,1.9,2.6);
     const chapter = t<2.5?0:t<6.65?1:2;
