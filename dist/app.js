@@ -30,14 +30,14 @@
   // Native scrolling also supports trackpads, touch, keyboard, and scrollbars.
   const CHAPTERS = { intro: 0, message: 3.35, gallery: 5.3, explore: 10 };
   const layout = [
-    { x:31,y:17,w:14,r:.8,speed:.72,c:'#929a83',mx:16 },
-    { x:38,y:65,w:15,r:1,speed:1.02,c:'#66715b',mx:27 },
-    { x:61,y:44,w:32,r:.91,speed:.83,c:'#9a9f8c',mx:60 },
-    { x:6,y:112,w:22,r:1.2,speed:1.04,c:'#656f58',mx:-10 },
-    { x:45,y:160,w:21,r:.78,speed:.88,c:'#a4aa96',mx:44 },
-    { x:76,y:230,w:18,r:1.1,speed:.95,c:'#707d60',mx:80 },
-    { x:19,y:285,w:26,r:1.2,speed:.96,c:'#8c967b',mx:4 },
-    { x:60,y:330,w:24,r:.8,speed:1.01,c:'#a1a791',mx:55 }
+    { x:31,y:17,w:14,r:.8,speed:.72,c:'#476b99',mx:16 },
+    { x:38,y:65,w:15,r:1,speed:1.02,c:'#214d83',mx:27 },
+    { x:61,y:44,w:32,r:.91,speed:.83,c:'#587ca9',mx:60 },
+    { x:6,y:112,w:22,r:1.2,speed:1.04,c:'#1b477f',mx:-10 },
+    { x:45,y:160,w:21,r:.78,speed:.88,c:'#6c8bb3',mx:44 },
+    { x:76,y:230,w:18,r:1.1,speed:.95,c:'#2c5b91',mx:80 },
+    { x:19,y:285,w:26,r:1.2,speed:.96,c:'#406ca1',mx:4 },
+    { x:60,y:330,w:24,r:.8,speed:1.01,c:'#6384ad',mx:55 }
   ];
 
   function addImage(parent, path, alt) {
@@ -175,7 +175,7 @@
     const insetX = (mobile ? 7 : 32)*thumb;
     hero.style.clipPath = `inset(${insetY}% ${insetX}%)`;
     hero.style.opacity = 1-messageOut;
-    hero.style.setProperty('--thumb-tone',thumb*.55);
+    hero.style.setProperty('--thumb-tone',thumb*.88);
     hero.style.transform = `translate3d(0,${-messageOut*unit*.2}px,0) scale(${mix(1,.88,messageOut)})`;
     ui.heroLight.style.opacity = 1-thumb*.5;
     ui.heroLight.style.setProperty('--light-x',`${50+px*35}%`);
@@ -236,7 +236,7 @@
     ui.splitContours.style.transform=`translate3d(${-px*14}px,${py*-10}px,0) rotate(${mix(-6,0,endP)}deg) scale(${mix(1.15,1,endP)})`;
     }
     const isDark=menuOpen||thumb>.12&&splitEnter<.7;
-    document.documentElement.style.setProperty('--header-color',isDark?'#f3f3eb':'#292d23');
+    document.documentElement.style.setProperty('--header-color',isDark?'#f3f3eb':'#0a2447');
     ui.centerMark.style.opacity=1-smooth(range(t,1.4,2.2));
     const chapter=t<2.2?0:t<4.65?1:t<9.25?2:3;
     if(chapter!==activeChapter){
