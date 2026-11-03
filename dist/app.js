@@ -10,17 +10,21 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = matchMedia('(pointer: fine)');
   const stage = $('.stage'), hero = $('.hero-scene'), portrait = $('.hero-portrait');
-  const gallery = $('.gallery-scene'), split = $('.split-scene');
-  const world = $('.gallery-world'), intro = $('.gallery-intro'), quote = $('.gallery-quote');
+  const message = $('.message-scene'), gallery = $('.gallery-scene'), split = $('.split-scene');
+  const world = $('.gallery-world'), quote = $('.gallery-quote');
+  const signature = $('.message-signature'), signaturePath = $('path', signature);
+  const ring = $('.transition-ring');
   const header = $('.site-header'), progress = $('.scroll-progress>span');
   const menu = $('.site-menu'), toggle = $('.menu-toggle');
   const cursor = $('.custom-cursor'), dialog = $('.image-dialog');
   let unit = innerHeight, current = scrollY, target = scrollY, frame = 0, lastTime = 0;
   let menuOpen = false, activeChapter = -1, cursorActive = false;
+  let mouseX = 0, mouseY = 0, aimX = 0, aimY = 0;
+  const TOTAL_HEIGHT = 11.8;
 
   // Each section's distance is expressed in viewport heights, not wheel events.
   // Native scrolling also supports trackpads, touch, keyboard, and scrollbars.
-  const CHAPTERS = { intro: 0, gallery: 3, explore: 7.1 };
+  const CHAPTERS = { intro: 0, message: 3.35, gallery: 5.3, explore: 10 };
   const layout = [
     { x:31,y:17,w:14,r:.8,speed:.72,c:'#929a83',mx:16 },
     { x:38,y:65,w:15,r:1,speed:1.02,c:'#66715b',mx:27 },
@@ -45,6 +49,10 @@
   }
   $('.wordmark>span').textContent = content.name[0];
   $('.wordmark>strong').textContent = content.name[1];
+  $$('.message-marquee>span').forEach((el, i) => {
+    const line = content.message?.lines[i] || 'TEXT PLACEHOLDER';
+    el.textContent = Array(6).fill(line).join(' / ') + ' / ';
+  });
   fillUserImage(portrait, content.heroImage);
   if (content.heroImage) $('.portrait-label').hidden = true;
   layout.forEach((l, i) => {
@@ -80,6 +88,7 @@
   $$('.contours').forEach(el => el.innerHTML = contours);
 
   function openPreview(path, caption) {
+    aimX = aimY = 0; requestTick();
     cursorActive = false; cursor.classList.remove('visible');
     const holder = $('.dialog-image'); holder.innerHTML = '<span class="slot-cross"></span>';
     addImage(holder, path, caption); $('.dialog-label').textContent = caption;
@@ -91,6 +100,7 @@
   dialog.addEventListener('close', () => { document.body.style.overflow = menuOpen ? 'hidden' : ''; });
 
   function setMenu(open) {
+    aimX = aimY = 0;
     menuOpen = open; document.body.classList.toggle('menu-open', open);
     menu.inert = !open; $('.stage').inert = open; $('.chapter-navigation').inert = open;
     toggle.setAttribute('aria-expanded', String(open)); toggle.setAttribute('aria-label', open ? '关闭导航' : '打开导航');
@@ -120,84 +130,133 @@
   }));
   $$('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 
-  // One reversible timeline; no discrete wheel locks or scroll traps.
+  // Scroll and pointer movement share one reversible, frame-rate-independent timeline.
   function render(y) {
     const t = y / unit, mobile = innerWidth <= 600;
-    const heroP = smooth(range(t, 0, 2.4));
-    portrait.style.transform = `translate3d(-50%,${mix(1, 10, heroP)}%,0) scale(${mix(1.18, .82, heroP)})`;
-    $('.orbit-one').style.transform = `translate(-50%,-50%) rotate(${mix(-18, 28, heroP)}deg) scale(${mix(1, 1.35, heroP)})`;
-    $('.orbit-two').style.transform = `translate(-50%,-50%) rotate(${mix(35, -24, heroP)}deg)`;
-    const shells = smooth(range(t, .65, 1.85));
-    $$('.floating-shell').forEach((s, i) => {
-      s.style.opacity = shells * .85;
-      s.style.transform = `translate3d(${mix(i ? 95 : -85, i ? -35 : 55, shells)}%,${mix(20,-12,shells)}%,0) rotate(${mix(i ? 45 : -40, i ? -12 : 20,shells)}deg)`;
+    const px = reduced.matches ? 0 : mouseX, py = reduced.matches ? 0 : mouseY;
+    const heroP = smooth(range(t, 0, 1.7));
+    const thumb = smooth(range(t, 1.7, 3.05));
+    const messageOut = smooth(range(t, 4.25, 5.1));
+    const heroScale = mix(mix(1.18, .95, heroP), mobile ? .55 : .64, thumb);
+    const heroY = mix(mix(1, -4, heroP), mobile ? -9 : -13, thumb);
+    portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*5}deg) rotateY(${px*10}deg) scale(${heroScale})`;
+    const cardHeight = mobile ? unit*.38 : Math.min(unit*.46,innerWidth*.36/1.63);
+    const insetY = (1-cardHeight/unit)*50*thumb;
+    const insetX = (mobile ? 7 : 32)*thumb;
+    hero.style.clipPath = `inset(${insetY}% ${insetX}%)`;
+    hero.style.opacity = 1-messageOut;
+    hero.style.setProperty('--thumb-tone',thumb*.55);
+    hero.style.transform = `translate3d(0,${-messageOut*unit*.2}px,0) scale(${mix(1,.88,messageOut)})`;
+    $('.hero-light').style.opacity = 1-thumb*.5;
+    stage.style.setProperty('--light-x',`${50+px*35}%`);
+    stage.style.setProperty('--light-y',`${40+py*30}%`);
+    $('.orbit-one').style.transform = `translate(-50%,-50%) rotate(${mix(-18,28,heroP)+px*14}deg) scale(${mix(1,1.35,heroP)})`;
+    $('.orbit-two').style.transform = `translate(-50%,-50%) rotate(${mix(35,-24,heroP)-px*18}deg)`;
+    const shells = smooth(range(t,.6,1.5))*(1-thumb);
+    $$('.floating-shell').forEach((s,i)=>{
+      s.style.opacity=shells*.8;
+      s.style.transform=`translate3d(calc(${mix(i?95:-85,i?-35:55,heroP)}% + ${px*(i?-35:25)}px),${mix(20,-12,heroP)+py*6}%,0) rotate(${mix(i?45:-40,i?-12:20,heroP)+px*8}deg)`;
     });
-    $('.hero-bottom-copy').style.opacity = smooth(range(t,.8,1.7)) * (1-range(t,2,2.6));
-    $('.hero-contours').style.transform = `translate3d(0,${-t * 1.8}%,0) rotate(${t*.5}deg)`;
-    const galleryEnter = smooth(range(t, 2, 2.85));
-    gallery.style.transform = `translate3d(0,${(1-galleryEnter)*100}%,0)`;
-    const gp = Math.max(0,t-3.65);
-    const introOut = smooth(range(t,2.9,3.65));
-    intro.style.opacity = 1-introOut;
-    intro.style.transform = `translate3d(0,${-introOut*100}px,0)`;
-    const cardsIn = smooth(range(t,2.85,3.6));
-    cards.forEach((card,i) => {
-      card.style.transform = `translate3d(0,${((1-cardsIn)*.55-gp*layout[i].speed)*unit}px,0)`;
-      card.style.opacity = cardsIn;
+    $('.hero-bottom-copy').style.opacity = 0;
+    ['.hero-coordinate','.corner-card','.scroll-prompt','.portrait-label'].forEach(selector=>$(selector).style.opacity=1-thumb);
+    $('.hero-contours').style.transform=`translate3d(${-px*24}px,${-t*1.8-py*1.5}%,0) rotate(${t*.5}deg)`;
+    message.style.opacity=smooth(range(t,1.65,2.3));
+    message.style.visibility=t>5.3?'hidden':'visible';
+    $('.message-contours').style.transform=`translate3d(${-px*18}px,${py*-12}px,0) rotate(${(t-3)*.8}deg)`;
+    const messageText=smooth(range(t,2.1,2.9))*(1-messageOut);
+    $('.message-marquees').style.opacity=messageText;
+    $$('.message-marquee').forEach((row,i)=>{
+      const direction=i?1:-1;
+      row.style.transform=`translate3d(calc(${i?-35:-15}% + ${direction*((t-3.35)*170+px*55)}px),${py*(i?10:-8)}px,0)`;
     });
-    quote.style.opacity = smooth(range(t,3.25,3.65));
-    quote.style.transform = `translate3d(0,${-gp*.68*unit}px,0)`;
-    $('.gallery-contours').style.transform = `translate3d(0,${-gp*2.8}%,0)`;
-    $('#moment-counter').textContent = String(clamp(Math.floor(gp*2.3)+1,1,8)).padStart(2,'0');
-    const splitEnter = smooth(range(t,6.1,7.15));
-    split.style.transform = `translate3d(0,${(1-splitEnter)*100}%,0)`;
-    const endP = smooth(range(t,6.5,7.6));
-    const dist = mobile ? 18 : 12;
-    $('.split-portrait-left').style.transform = `translate3d(${mix(-dist,0,endP)}%,0,0) scaleX(-1)`;
-    $('.split-portrait-right').style.transform = `translate3d(${mix(dist,0,endP)}%,0,0)`;
-    $('.split-options').style.opacity = smooth(range(t,6.65,7.15));
-    $('.split-options').style.transform = `translate(-50%,${mix(-25,-48,endP)}%)`;
-    $('.split-contours').style.transform = `rotate(${mix(-3,0,endP)}deg) scale(${mix(1.1,1,endP)})`;
-    const isDark = menuOpen || galleryEnter>.94 && splitEnter<.94;
+    $('.message-eyebrow').style.opacity=smooth(range(t,2.35,2.9))*(1-messageOut);
+    $('.message-footer').style.opacity=messageText;
+    const draw=smooth(range(t,2.5,3.35));
+    signature.style.opacity=draw*(1-messageOut);
+    signaturePath.style.strokeDashoffset=1-draw;
+    signature.style.transform=`translate3d(calc(-50% + ${-px*22}px),calc(-50% + ${-py*14}px),0) rotate(${px*3}deg) scale(${mix(.92,1,draw)})`;
+
+    const galleryEnter=smooth(range(t,4.3,5.2));
+    const splitEnter=smooth(range(t,8.35,9.9));
+    gallery.style.opacity=galleryEnter;
+    gallery.style.transform=`scale(${mix(1.13,1,galleryEnter)-splitEnter*.12}) rotate(${-splitEnter*2}deg)`;
+    const gp=Math.max(0,t-5.25);
+    cards.forEach((card,i)=>{
+      card.style.transform=`translate3d(${-px*(9+i*3)}px,${((1-galleryEnter)*.65-gp*layout[i].speed)*unit-py*(7+i*2)}px,0)`;
+      card.style.opacity=galleryEnter;
+    });
+    quote.style.opacity=galleryEnter*(1-splitEnter);
+    quote.style.transform=`translate3d(${px*15}px,${-gp*.68*unit-py*11}px,0)`;
+    $('.gallery-contours').style.transform=`translate3d(${-px*16}px,${-gp*2.8-py}%,0)`;
+    $('#moment-counter').textContent=String(clamp(Math.floor(gp*2.3)+1,1,8)).padStart(2,'0');
+
+    // A growing aperture reveals the white scene while the dark scene recedes.
+    split.style.transform='none';
+    split.style.clipPath=`ellipse(${splitEnter*92}% ${splitEnter*140}% at 50% 50%)`;
+    ring.style.width=`${splitEnter*184}vw`;
+    ring.style.height=`${splitEnter*280}vh`;
+    ring.style.opacity=reduced.matches?0:Math.sin(splitEnter*Math.PI)*.7;
+    const endP=smooth(range(t,8.75,10.3));
+    const dist=mobile?28:32;
+    $('.split-portrait-left').style.transform=`translate3d(${mix(-dist,0,endP)-px*2}%,${py*-1}%,0) scaleX(-1)`;
+    $('.split-portrait-right').style.transform=`translate3d(${mix(dist,0,endP)+px*2}%,${py}%,0)`;
+    $('.split-options').style.opacity=smooth(range(t,8.55,9.4));
+    $('.split-options').style.transform=`translate(calc(-50% + ${px*6}px),${mix(-25,-48,endP)}%)`;
+    $('.split-contours').style.transform=`translate3d(${-px*14}px,${py*-10}px,0) rotate(${mix(-6,0,endP)}deg) scale(${mix(1.15,1,endP)})`;
+    const isDark=menuOpen||thumb>.12&&splitEnter<.7;
     document.documentElement.style.setProperty('--header-color',isDark?'#f3f3eb':'#292d23');
-    header.querySelector('.center-mark').style.opacity = 1-range(t,1.9,2.6);
-    const chapter = t<2.5?0:t<6.65?1:2;
-    if (chapter!==activeChapter) {
+    header.querySelector('.center-mark').style.opacity=1-smooth(range(t,1.4,2.2));
+    const chapter=t<2.2?0:t<4.65?1:t<9.25?2:3;
+    if(chapter!==activeChapter){
       activeChapter=chapter;
       $$('.chapter-navigation a').forEach((a,i)=>{a.classList.toggle('active',i===chapter);if(i===chapter)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current');});
-      hero.inert=chapter!==0;gallery.inert=chapter!==1;split.inert=chapter!==2;
-      hero.setAttribute('aria-hidden',String(chapter!==0));gallery.setAttribute('aria-hidden',String(chapter!==1));split.setAttribute('aria-hidden',String(chapter!==2));
-      $('.live-status').textContent=['01 / 开场','02 / 图片叙事','03 / 双栏入口'][chapter];
+      [hero,message,gallery,split].forEach((scene,i)=>{scene.inert=chapter!==i;scene.setAttribute('aria-hidden',String(chapter!==i));});
+      $('.live-status').textContent=['01 / 开场','02 / 缩小画面','03 / 图片叙事','04 / 双栏入口'][chapter];
     }
-    const max = document.documentElement.scrollHeight-innerHeight;
+    const max=document.documentElement.scrollHeight-innerHeight;
     progress.style.transform=`scaleX(${clamp(y/max)})`;
-    // Covered scenes stop rendering while retaining their current timeline state.
-    hero.style.visibility=t>2.9?'hidden':'visible';
-    gallery.style.visibility=t>7.2||t<1.99?'hidden':'visible';
-    split.style.visibility=t<6.09?'hidden':'visible';
+    hero.style.visibility=t>5.2?'hidden':'visible';
+    gallery.style.visibility=t>10||t<4.29?'hidden':'visible';
+    split.style.visibility=t<8.34?'hidden':'visible';
   }
-  function tick(time) {
+  function tick(time){
     frame=0;
     const dt=lastTime?Math.min(50,time-lastTime):16.67;lastTime=time;
-    const factor=reduced.matches?1:1-Math.exp(-dt/76);
+    const factor=reduced.matches?1:1-Math.exp(-dt/90);
     current=mix(current,target,factor);
+    mouseX=mix(mouseX,aimX,factor);mouseY=mix(mouseY,aimY,factor);
     if(Math.abs(target-current)<.1)current=target;
+    if(Math.abs(mouseX-aimX)<.0001)mouseX=aimX;
+    if(Math.abs(mouseY-aimY)<.0001)mouseY=aimY;
     render(current);
-    if(current!==target)frame=requestAnimationFrame(tick);else lastTime=0;
+    if(current!==target||mouseX!==aimX||mouseY!==aimY)frame=requestAnimationFrame(tick);else lastTime=0;
   }
   function requestTick(){if(!frame)frame=requestAnimationFrame(tick);}
   addEventListener('scroll',()=>{target=scrollY;requestTick();},{passive:true});
-  addEventListener('resize',()=>{unit=$('.scroll-space').offsetHeight/8.8;target=scrollY;current=target;requestTick();},{passive:true});
+  addEventListener('resize',()=>{unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;target=scrollY;current=target;requestTick();},{passive:true});
   reduced.addEventListener('change',requestTick);
   document.addEventListener('pointermove',e=>{
-    if(!finePointer.matches)return;
+    if(!finePointer.matches||e.pointerType==='touch')return;
+    if(!menuOpen&&!dialog.open&&!reduced.matches){aimX=clamp(e.clientX/innerWidth*2-1,-1,1);aimY=clamp(e.clientY/innerHeight*2-1,-1,1);requestTick();}
+    const slot=e.target.closest?.('.image-slot');
+    if(slot&&!reduced.matches){const rect=slot.getBoundingClientRect();const rx=(e.clientY-rect.top)/rect.height-.5,ry=(e.clientX-rect.left)/rect.width-.5;slot.style.transform=`perspective(700px) rotateX(${-rx*7}deg) rotateY(${ry*7}deg)`;}
     cursor.style.translate=`${e.clientX-34.5}px ${e.clientY-34.5}px`;
     cursor.style.transform='none';
-    const hover=!!e.target.closest('.image-slot')&&!menuOpen&&!dialog.open;
+    const hover=!!e.target.closest?.('.image-slot')&&!menuOpen&&!dialog.open;
     if(hover!==cursorActive){cursorActive=hover;cursor.classList.toggle('visible',hover);}
   },{passive:true});
-  document.addEventListener('pointerleave',()=>{cursorActive=false;cursor.classList.remove('visible');});
-  unit=$('.scroll-space').offsetHeight/8.8;
+  document.addEventListener('pointerleave',()=>{aimX=aimY=0;cursorActive=false;cursor.classList.remove('visible');requestTick();});
+  $$('.image-slot').forEach(slot=>slot.addEventListener('pointerleave',()=>{slot.style.transform='';}));
+  addEventListener('wheel',e=>{
+    if(menuOpen||dialog.open||e.ctrlKey||reduced.matches||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;
+    const delta=e.deltaY*(e.deltaMode===1?18:e.deltaMode===2?unit:1);
+    if(!delta)return;
+    e.preventDefault();
+    const max=document.documentElement.scrollHeight-innerHeight;
+    target=clamp(target+clamp(delta,-unit*.9,unit*.9)*1.08,0,max);
+    window.scrollTo({top:target,behavior:'instant'});requestTick();
+  },{passive:false});
+  unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;
   const initial=location.hash.slice(1);
   if(initial in CHAPTERS)window.scrollTo(0,CHAPTERS[initial]*unit);
   current=target=scrollY;render(current);

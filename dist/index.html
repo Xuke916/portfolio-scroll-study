@@ -46,8 +46,15 @@
 
   <main id="experience">
     <div class="stage">
+      <section class="scene message-scene" aria-label="02 / 缩小画面">
+        <div class="contours message-contours"></div>
+        <div class="message-eyebrow"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="m15 7-6 22h10m8-22-6 22h10"/></svg><span class="mono">A NOTE / TEXT PLACEHOLDER</span></div>
+        <div class="message-marquees" aria-label="大字占位"><div class="message-marquee serif"><span></span></div><div class="message-marquee sans"><span></span></div></div>
+        <span class="message-footer mono">MOVE YOUR MOUSE · SCROLL TO CONTINUE</span>
+      </section>
       <section class="scene hero-scene" aria-label="01 / 开场">
         <div class="contours hero-contours"></div>
+        <div class="hero-light" aria-hidden="true"></div>
         <div class="hero-coordinate mono">IMAGE / 01<span>SCROLL TO EXPLORE</span></div>
         <div class="hero-portrait">
           <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
@@ -58,18 +65,19 @@
         <div class="floating-shell shell-left"><span>02</span><i></i></div><div class="floating-shell shell-right"><span>03</span><i></i></div>
         <div class="hero-bottom-copy"><div class="placeholder-line"></div><div class="placeholder-line short"></div><span class="mono">TEXT PLACEHOLDER</span></div>
         <div class="corner-card"><span class="mono">PORTFOLIO / 2026</span><svg viewBox="0 0 70 40"><path d="M8 29 22 11h26l14 18H8Zm14-18 13 18 13-18M8 29l27 8 27-8M35 2v9"/></svg><span class="corner-divider"></span><strong>01 — 03</strong><span class="mono">SCROLL ↓</span></div>
-        <button class="scroll-prompt mono" data-go="gallery"><span>SCROLL TO EXPLORE</span><i>↓</i></button>
+        <button class="scroll-prompt mono" data-go="message"><span>MOVE YOUR MOUSE · SCROLL TO EXPLORE</span><i>↓</i></button>
       </section>
+      <div class="message-signature" aria-hidden="true"><svg viewBox="0 0 1000 700" preserveAspectRatio="none"><path pathLength="1" d="M130 550C-60 620 220 370 540 232S1080 70 855 310 660 480 706 330L480 597 561 379 387 651 735 45"/></svg></div>
 
-      <section class="scene gallery-scene" aria-label="02 / 图片叙事">
+      <section class="scene gallery-scene" aria-label="03 / 图片叙事">
         <div class="contours gallery-contours"></div>
-        <div class="gallery-intro"><span class="mono">02 / SELECTED MOMENTS</span><div class="intro-line"></div><div class="intro-line"></div><div class="intro-line short"></div><span class="mono intro-caption">TEXT PLACEHOLDER</span></div>
         <div class="gallery-world" aria-label="图片占位画廊"></div>
         <div class="gallery-quote"><span class="mono">A NOTE / TEXT PLACEHOLDER</span><div class="quote-line"></div><div class="quote-line"></div><div class="quote-line short"></div><svg viewBox="0 0 100 38" aria-hidden="true"><path d="m3 28 50-21-29 26L68 6 46 30l42-16-21 21M8 27l83-4"/></svg></div>
         <span class="gallery-counter mono"><span id="moment-counter">01</span> / 08</span>
       </section>
 
-      <section class="scene split-scene" aria-label="03 / 双栏入口">
+      <div class="transition-ring" aria-hidden="true"></div>
+      <section class="scene split-scene" aria-label="04 / 双栏入口">
         <div class="contours split-contours"></div>
         <div class="split-portrait split-portrait-left"><svg viewBox="0 0 520 820" aria-label="左侧图片占位" role="img"><use href="#profile-placeholder"/></svg><img class="user-image" alt="左侧图片" hidden><span class="mono">IMAGE / 10</span></div>
         <div class="split-portrait split-portrait-right"><svg viewBox="0 0 520 820" aria-label="右侧图片占位" role="img"><use href="#profile-placeholder"/></svg><img class="user-image" alt="右侧图片" hidden><span class="mono">IMAGE / 11</span></div>
@@ -77,17 +85,17 @@
           <button class="split-option" data-project="0"><span class="mono option-index">01 / TITLE PLACEHOLDER</span><span class="split-heading"><em>YOUR</em><strong>WORK</strong></span><span class="description-skeleton"><i></i><i></i></span><span class="square-arrow">↗</span></button>
           <button class="split-option" data-project="1"><span class="mono option-index">02 / TITLE PLACEHOLDER</span><span class="split-heading"><em>YOUR</em><strong>WORLD</strong></span><span class="description-skeleton"><i></i><i></i></span><span class="square-arrow">↗</span></button>
         </div>
-        <span class="split-bottom mono">03 / 03 <i></i> END OF PREVIEW</span>
+        <span class="split-bottom mono">04 / 04 <i></i> END OF PREVIEW</span>
       </section>
     </div>
-    <div class="scroll-space" aria-hidden="true"><div id="intro"></div><div id="gallery"></div><div id="explore"></div></div>
+    <div class="scroll-space" aria-hidden="true"><div id="intro"></div><div id="message"></div><div id="gallery"></div><div id="explore"></div></div>
   </main>
 
-  <nav class="chapter-navigation" id="chapter-navigation" aria-label="章节导航"><a href="#intro" class="active" aria-label="01 开场" aria-current="step"><i></i><span>01</span></a><a href="#gallery" aria-label="02 图片叙事"><i></i><span>02</span></a><a href="#explore" aria-label="03 双栏入口"><i></i><span>03</span></a></nav>
+  <nav class="chapter-navigation" id="chapter-navigation" aria-label="章节导航"><a href="#intro" class="active" aria-label="01 开场" aria-current="step"><i></i><span>01</span></a><a href="#message" aria-label="02 缩小画面"><i></i><span>02</span></a><a href="#gallery" aria-label="03 图片叙事"><i></i><span>03</span></a><a href="#explore" aria-label="04 双栏入口"><i></i><span>04</span></a></nav>
   <div class="scroll-progress" aria-hidden="true"><span></span></div>
   <div class="custom-cursor" aria-hidden="true"><span>VIEW ↗</span></div>
 
-  <div class="site-menu" id="site-menu" inert><div class="menu-content"><span class="mono">PORTFOLIO / CONTENT PLACEHOLDERS</span><nav aria-label="主导航"><a href="#intro"><span>01</span>INTRO<i>↗</i></a><a href="#gallery"><span>02</span>MOMENTS<i>↗</i></a><a href="#explore"><span>03</span>EXPLORE<i>↗</i></a></nav><span class="mono menu-note">SCROLL TO MOVE. SCROLL BACK TO REVISIT.</span></div></div>
+  <div class="site-menu" id="site-menu" inert><div class="menu-content"><span class="mono">PORTFOLIO / CONTENT PLACEHOLDERS</span><nav aria-label="主导航"><a href="#intro"><span>01</span>INTRO<i>↗</i></a><a href="#message"><span>02</span>A NOTE<i>↗</i></a><a href="#gallery"><span>03</span>MOMENTS<i>↗</i></a><a href="#explore"><span>04</span>EXPLORE<i>↗</i></a></nav><span class="mono menu-note">MOVE YOUR MOUSE. SCROLL TO EXPLORE.</span></div></div>
 
   <dialog class="image-dialog"><button class="dialog-close" aria-label="关闭预览">×</button><div class="dialog-image"></div><div class="dialog-footer"><span class="mono dialog-label">IMAGE PLACEHOLDER</span><span class="mono">ESC TO CLOSE</span></div></dialog>
   <div class="live-status" aria-live="polite"></div>

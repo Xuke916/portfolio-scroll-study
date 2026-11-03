@@ -3,6 +3,9 @@
 window.PORTFOLIO_CONTENT = {
   name: ["YOUR", "NAME"],
   heroImage: "",
+  message: {
+    lines: ["YOUR STORY GOES HERE", "YOUR WORDS GO HERE"]
+  },
   gallery: Array.from({ length: 8 }, (_, i) => ({ image: "", caption: "IMAGE / " + String(i + 2).padStart(2, "0") })),
   entries: [
     { title: ["YOUR", "WORK"], description: "", image: "" },
