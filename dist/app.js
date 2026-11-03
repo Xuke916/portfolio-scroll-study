@@ -20,7 +20,11 @@
   let unit = innerHeight, current = scrollY, target = scrollY, frame = 0, lastTime = 0;
   let menuOpen = false, activeChapter = -1, cursorActive = false;
   let mouseX = 0, mouseY = 0, aimX = 0, aimY = 0;
-  const TOTAL_HEIGHT = 11.8;
+  const TOTAL_HEIGHT = 8.2;
+  const TIMELINE_SCALE = 1.5;
+  const SCROLL_DAMPING_MS = 70;
+  const POINTER_DAMPING_MS = 90;
+  let lastWrittenScroll = scrollY, navigation = null;
 
   // Each section's distance is expressed in viewport heights, not wheel events.
   // Native scrolling also supports trackpads, touch, keyboard, and scrollbars.
@@ -68,6 +72,19 @@
     figure.append(caption, button); world.append(figure);
   });
   const cards = $$('.gallery-card');
+  // Keep stable element references out of the animation loop.
+  const ui = {
+    heroLight: $('.hero-light'), orbits: [$('.orbit-one'), $('.orbit-two')],
+    shells: $$('.floating-shell'), heroCopy: $('.hero-bottom-copy'),
+    heroMeta: ['.hero-coordinate','.corner-card','.scroll-prompt','.portrait-label'].map(s => $(s)),
+    heroContours: $('.hero-contours'), messageContours: $('.message-contours'),
+    marquees: $$('.message-marquee'), marqueeGroup: $('.message-marquees'),
+    messageEyebrow: $('.message-eyebrow'), messageFooter: $('.message-footer'),
+    galleryContours: $('.gallery-contours'), counter: $('#moment-counter'),
+    splitPortraits: $$('.split-portrait'), splitOptions: $('.split-options'),
+    splitContours: $('.split-contours'), centerMark: $('.center-mark', header),
+    chapterLinks: $$('.chapter-navigation a'), liveStatus: $('.live-status')
+  };
   $$('.split-option').forEach((button, i) => {
     const entry = content.entries[i];
     $('.split-heading em', button).textContent = entry.title[0];
@@ -93,6 +110,7 @@
   $$('.contours').forEach(el => el.innerHTML = contours);
 
   function openPreview(path, caption) {
+    navigation = null; target = current;
     aimX = aimY = 0; requestTick();
     cursorActive = false; cursor.classList.remove('visible');
     const holder = $('.dialog-image'); holder.innerHTML = '<span class="slot-cross"></span>';
@@ -105,6 +123,7 @@
   dialog.addEventListener('close', () => { document.body.style.overflow = menuOpen ? 'hidden' : ''; });
 
   function setMenu(open) {
+    navigation = null; target = current;
     aimX = aimY = 0;
     menuOpen = open; document.body.classList.toggle('menu-open', open);
     menu.inert = !open; $('.stage').inert = open; $('.chapter-navigation').inert = open;
@@ -126,7 +145,10 @@
   function go(chapter) {
     if (!(chapter in CHAPTERS)) return;
     if (menuOpen) setMenu(false);
-    window.scrollTo({ top: CHAPTERS[chapter] * unit, behavior: reduced.matches ? 'instant' : 'smooth' });
+    target = CHAPTERS[chapter] * unit / TIMELINE_SCALE;
+    if (reduced.matches) { current = target; navigation = null; writeScroll(current); }
+    else navigation = { from: current, to: target, started: null, duration: clamp(Math.abs(target-current)/unit*95, 320, 720) };
+    requestTick();
     history.replaceState(null, '', '#' + chapter);
   }
   $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
@@ -137,11 +159,14 @@
 
   // Scroll and pointer movement share one reversible, frame-rate-independent timeline.
   function render(y) {
-    const t = y / unit, mobile = innerWidth <= 600;
+    const t = y / unit * TIMELINE_SCALE, mobile = innerWidth <= 600;
     const px = reduced.matches ? 0 : mouseX, py = reduced.matches ? 0 : mouseY;
     const heroP = smooth(range(t, 0, 1.7));
     const thumb = smooth(range(t, 1.7, 3.05));
     const messageOut = smooth(range(t, 4.25, 5.1));
+    const galleryEnter=smooth(range(t,4.3,5.2));
+    const splitEnter=smooth(range(t,8.35,9.9));
+    if(t<5.3){
     const heroScale = mix(mix(1.18, .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), mobile ? -9 : -13, thumb);
     portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*5}deg) rotateY(${px*10}deg) scale(${heroScale})`;
@@ -152,37 +177,37 @@
     hero.style.opacity = 1-messageOut;
     hero.style.setProperty('--thumb-tone',thumb*.55);
     hero.style.transform = `translate3d(0,${-messageOut*unit*.2}px,0) scale(${mix(1,.88,messageOut)})`;
-    $('.hero-light').style.opacity = 1-thumb*.5;
-    stage.style.setProperty('--light-x',`${50+px*35}%`);
-    stage.style.setProperty('--light-y',`${40+py*30}%`);
-    $('.orbit-one').style.transform = `translate(-50%,-50%) rotate(${mix(-18,28,heroP)+px*14}deg) scale(${mix(1,1.35,heroP)})`;
-    $('.orbit-two').style.transform = `translate(-50%,-50%) rotate(${mix(35,-24,heroP)-px*18}deg)`;
+    ui.heroLight.style.opacity = 1-thumb*.5;
+    ui.heroLight.style.setProperty('--light-x',`${50+px*35}%`);
+    ui.heroLight.style.setProperty('--light-y',`${40+py*30}%`);
+    ui.orbits[0].style.transform = `translate(-50%,-50%) rotate(${mix(-18,28,heroP)+px*14}deg) scale(${mix(1,1.35,heroP)})`;
+    ui.orbits[1].style.transform = `translate(-50%,-50%) rotate(${mix(35,-24,heroP)-px*18}deg)`;
     const shells = smooth(range(t,.6,1.5))*(1-thumb);
-    $$('.floating-shell').forEach((s,i)=>{
+    ui.shells.forEach((s,i)=>{
       s.style.opacity=shells*.8;
       s.style.transform=`translate3d(calc(${mix(i?95:-85,i?-35:55,heroP)}% + ${px*(i?-35:25)}px),${mix(20,-12,heroP)+py*6}%,0) rotate(${mix(i?45:-40,i?-12:20,heroP)+px*8}deg)`;
     });
-    $('.hero-bottom-copy').style.opacity = 0;
-    ['.hero-coordinate','.corner-card','.scroll-prompt','.portrait-label'].forEach(selector=>$(selector).style.opacity=1-thumb);
-    $('.hero-contours').style.transform=`translate3d(${-px*24}px,${-t*1.8-py*1.5}%,0) rotate(${t*.5}deg)`;
+    ui.heroCopy.style.opacity = 0;
+    ui.heroMeta.forEach(el=>el.style.opacity=1-thumb);
+    ui.heroContours.style.transform=`translate3d(${-px*24}px,${-t*1.8-py*1.5}%,0) rotate(${t*.5}deg)`;
     message.style.opacity=smooth(range(t,1.65,2.3));
     message.style.visibility=t>5.3?'hidden':'visible';
-    $('.message-contours').style.transform=`translate3d(${-px*18}px,${py*-12}px,0) rotate(${(t-3)*.8}deg)`;
+    ui.messageContours.style.transform=`translate3d(${-px*18}px,${py*-12}px,0) rotate(${(t-3)*.8}deg)`;
     const messageText=smooth(range(t,2.1,2.9))*(1-messageOut);
-    $('.message-marquees').style.opacity=messageText;
-    $$('.message-marquee').forEach((row,i)=>{
+    ui.marqueeGroup.style.opacity=messageText;
+    ui.marquees.forEach((row,i)=>{
       const direction=i?1:-1;
       row.style.transform=`translate3d(calc(${i?-35:-15}% + ${direction*((t-3.35)*170+px*55)}px),${py*(i?10:-8)}px,0)`;
     });
-    $('.message-eyebrow').style.opacity=smooth(range(t,2.35,2.9))*(1-messageOut);
-    $('.message-footer').style.opacity=messageText;
+    ui.messageEyebrow.style.opacity=smooth(range(t,2.35,2.9))*(1-messageOut);
+    ui.messageFooter.style.opacity=messageText;
     const draw=smooth(range(t,2.5,3.35));
     signature.style.opacity=draw*(1-messageOut);
     signaturePath.style.strokeDashoffset=1-draw;
     signature.style.transform=`translate3d(calc(-50% + ${-px*22}px),calc(-50% + ${-py*14}px),0) rotate(${px*3}deg) scale(${mix(.92,1,draw)})`;
 
-    const galleryEnter=smooth(range(t,4.3,5.2));
-    const splitEnter=smooth(range(t,8.35,9.9));
+    }
+    if(t>4.2&&t<10.1){
     gallery.style.opacity=galleryEnter;
     gallery.style.transform=`scale(${mix(1.13,1,galleryEnter)-splitEnter*.12}) rotate(${-splitEnter*2}deg)`;
     const gp=Math.max(0,t-5.25);
@@ -192,54 +217,78 @@
     });
     quote.style.opacity=galleryEnter*(1-splitEnter);
     quote.style.transform=`translate3d(${px*15}px,${-gp*.68*unit-py*11}px,0)`;
-    $('.gallery-contours').style.transform=`translate3d(${-px*16}px,${-gp*2.8-py}%,0)`;
-    $('#moment-counter').textContent=String(clamp(Math.floor(gp*2.3)+1,1,8)).padStart(2,'0');
+    ui.galleryContours.style.transform=`translate3d(${-px*16}px,${-gp*2.8-py}%,0)`;
+    ui.counter.textContent=String(clamp(Math.floor(gp*2.3)+1,1,8)).padStart(2,'0');
 
+    }
+    if(t>8.25){
     // A growing aperture reveals the white scene while the dark scene recedes.
     split.style.transform='none';
     split.style.clipPath=`ellipse(${splitEnter*92}% ${splitEnter*140}% at 50% 50%)`;
-    ring.style.width=`${splitEnter*184}vw`;
-    ring.style.height=`${splitEnter*280}vh`;
+    ring.style.transform=`translate(-50%,-50%) scale(${splitEnter})`;
     ring.style.opacity=reduced.matches?0:Math.sin(splitEnter*Math.PI)*.7;
     const endP=smooth(range(t,8.75,10.3));
     const dist=mobile?28:32;
-    $('.split-portrait-left').style.transform=`translate3d(${mix(-dist,0,endP)-px*2}%,${py*-1}%,0) scaleX(-1)`;
-    $('.split-portrait-right').style.transform=`translate3d(${mix(dist,0,endP)+px*2}%,${py}%,0)`;
-    $('.split-options').style.opacity=smooth(range(t,8.55,9.4));
-    $('.split-options').style.transform=`translate(calc(-50% + ${px*6}px),${mix(-25,-48,endP)}%)`;
-    $('.split-contours').style.transform=`translate3d(${-px*14}px,${py*-10}px,0) rotate(${mix(-6,0,endP)}deg) scale(${mix(1.15,1,endP)})`;
+    ui.splitPortraits[0].style.transform=`translate3d(${mix(-dist,0,endP)-px*2}%,${py*-1}%,0) scaleX(-1)`;
+    ui.splitPortraits[1].style.transform=`translate3d(${mix(dist,0,endP)+px*2}%,${py}%,0)`;
+    ui.splitOptions.style.opacity=smooth(range(t,8.55,9.4));
+    ui.splitOptions.style.transform=`translate(calc(-50% + ${px*6}px),${mix(-25,-48,endP)}%)`;
+    ui.splitContours.style.transform=`translate3d(${-px*14}px,${py*-10}px,0) rotate(${mix(-6,0,endP)}deg) scale(${mix(1.15,1,endP)})`;
+    }
     const isDark=menuOpen||thumb>.12&&splitEnter<.7;
     document.documentElement.style.setProperty('--header-color',isDark?'#f3f3eb':'#292d23');
-    header.querySelector('.center-mark').style.opacity=1-smooth(range(t,1.4,2.2));
+    ui.centerMark.style.opacity=1-smooth(range(t,1.4,2.2));
     const chapter=t<2.2?0:t<4.65?1:t<9.25?2:3;
     if(chapter!==activeChapter){
       activeChapter=chapter;
-      $$('.chapter-navigation a').forEach((a,i)=>{a.classList.toggle('active',i===chapter);if(i===chapter)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current');});
+      ui.chapterLinks.forEach((a,i)=>{a.classList.toggle('active',i===chapter);if(i===chapter)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current');});
       [hero,message,gallery,split].forEach((scene,i)=>{scene.inert=chapter!==i;scene.setAttribute('aria-hidden',String(chapter!==i));});
-      $('.live-status').textContent=['01 / 开场','02 / 缩小画面','03 / 图片叙事','04 / 双栏入口'][chapter];
+      ui.liveStatus.textContent=['01 / 开场','02 / 缩小画面','03 / 图片叙事','04 / 双栏入口'][chapter];
     }
     const max=document.documentElement.scrollHeight-innerHeight;
     progress.style.transform=`scaleX(${clamp(y/max)})`;
     hero.style.visibility=t>5.2?'hidden':'visible';
+    message.style.visibility=t>5.3?'hidden':'visible';
+    signature.style.visibility=t>5.2?'hidden':'visible';
+    ring.style.visibility=t<8.3||t>9.95?'hidden':'visible';
     gallery.style.visibility=t>10||t<4.29?'hidden':'visible';
     split.style.visibility=t<8.34?'hidden':'visible';
   }
+  function writeScroll(value){
+    lastWrittenScroll=value;
+    window.scrollTo({top:value,behavior:'instant'});
+  }
   function tick(time){
     frame=0;
-    const dt=lastTime?Math.min(50,time-lastTime):16.67;lastTime=time;
-    const factor=reduced.matches?1:1-Math.exp(-dt/90);
-    current=mix(current,target,factor);
-    mouseX=mix(mouseX,aimX,factor);mouseY=mix(mouseY,aimY,factor);
-    if(Math.abs(target-current)<.1)current=target;
+    const dt=lastTime?Math.min(64,time-lastTime):16.67;lastTime=time;
+    if(navigation){
+      if(navigation.started===null)navigation.started=time;
+      const p=clamp((time-navigation.started)/navigation.duration);
+      current=mix(navigation.from,navigation.to,1-Math.pow(1-p,3));
+      if(p===1){current=target;navigation=null;}
+    }else{
+      const factor=reduced.matches?1:1-Math.exp(-dt/SCROLL_DAMPING_MS);
+      current=mix(current,target,factor);
+      if(Math.abs(target-current)<.35)current=target;
+    }
+    const pointerFactor=reduced.matches?1:1-Math.exp(-dt/POINTER_DAMPING_MS);
+    mouseX=mix(mouseX,aimX,pointerFactor);mouseY=mix(mouseY,aimY,pointerFactor);
     if(Math.abs(mouseX-aimX)<.0001)mouseX=aimX;
     if(Math.abs(mouseY-aimY)<.0001)mouseY=aimY;
+    // The native scroll position and visible frame move together, with no second trailing filter.
+    if(current!==lastWrittenScroll)writeScroll(current);
     render(current);
-    if(current!==target||mouseX!==aimX||mouseY!==aimY)frame=requestAnimationFrame(tick);else lastTime=0;
+    if(navigation||current!==target||mouseX!==aimX||mouseY!==aimY)frame=requestAnimationFrame(tick);else lastTime=0;
   }
   function requestTick(){if(!frame)frame=requestAnimationFrame(tick);}
-  addEventListener('scroll',()=>{target=scrollY;requestTick();},{passive:true});
-  addEventListener('resize',()=>{unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;target=scrollY;current=target;requestTick();},{passive:true});
-  reduced.addEventListener('change',requestTick);
+  addEventListener('scroll',()=>{
+    const actual=scrollY;
+    if(Math.abs(actual-lastWrittenScroll)<1)return;
+    navigation=null;current=target=lastWrittenScroll=actual;requestTick();
+  },{passive:true});
+  addEventListener('resize',()=>{unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;navigation=null;target=current=lastWrittenScroll=scrollY;requestTick();},{passive:true});
+  addEventListener('touchstart',()=>{navigation=null;target=current;},{passive:true});
+  reduced.addEventListener('change',()=>{if(reduced.matches){navigation=null;aimX=aimY=0;}requestTick();});
   document.addEventListener('pointermove',e=>{
     if(!finePointer.matches||e.pointerType==='touch')return;
     if(!menuOpen&&!dialog.open&&!reduced.matches){aimX=clamp(e.clientX/innerWidth*2-1,-1,1);aimY=clamp(e.clientY/innerHeight*2-1,-1,1);requestTick();}
@@ -253,17 +302,22 @@
   document.addEventListener('pointerleave',()=>{aimX=aimY=0;cursorActive=false;cursor.classList.remove('visible');requestTick();});
   $$('.image-slot').forEach(slot=>slot.addEventListener('pointerleave',()=>{slot.style.transform='';}));
   addEventListener('wheel',e=>{
-    if(menuOpen||dialog.open||e.ctrlKey||reduced.matches||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;
+    if(menuOpen||dialog.open||e.ctrlKey||reduced.matches||!e.cancelable||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;
     const delta=e.deltaY*(e.deltaMode===1?18:e.deltaMode===2?unit:1);
     if(!delta)return;
     e.preventDefault();
+    if(navigation||delta*(target-current)<0)target=current;
+    navigation=null;
+    // Coarse mouse wheels need more travel; trackpads keep their native precision and momentum.
+    const coarse=e.deltaMode!==0||(Math.abs(e.deltaY)>=50&&Number.isInteger(e.deltaY)&&e.deltaX===0);
+    const gain=coarse?1.35:1;
     const max=document.documentElement.scrollHeight-innerHeight;
-    target=clamp(target+clamp(delta,-unit*.9,unit*.9)*1.08,0,max);
-    window.scrollTo({top:target,behavior:'instant'});requestTick();
+    target=clamp(target+clamp(delta,-unit*2.5,unit*2.5)*gain,0,max);
+    requestTick();
   },{passive:false});
   unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;
   const initial=location.hash.slice(1);
-  if(initial in CHAPTERS)window.scrollTo(0,CHAPTERS[initial]*unit);
+  if(initial in CHAPTERS)writeScroll(CHAPTERS[initial]*unit/TIMELINE_SCALE);
   current=target=scrollY;render(current);
   document.documentElement.classList.add('ready');
 })();
