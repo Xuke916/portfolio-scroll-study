@@ -1,0 +1,5 @@
+reference/
+*.tar.gz
+*.tgz
+node_modules/
+.DS_Store

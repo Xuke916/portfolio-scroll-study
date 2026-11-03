@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f3f3eb">
+  <meta name="description" content="A scroll-driven portfolio study. Content and image placeholders are ready to replace.">
+  <title>Portfolio / Scroll Study</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23d2ff00'/%3E%3Cpath d='m14 10-4 20h8m8-20-4 20h8' fill='none' stroke='%232d3126' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="content.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#chapter-navigation">跳转至章节导航</a>
+  <svg class="svg-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="body-shade" x1="0" y1="0" x2="1" y2=".3"><stop stop-color="#a7aa9e"/><stop offset=".43" stop-color="#d1d3c8"/><stop offset=".7" stop-color="#b8bbae"/><stop offset="1" stop-color="#898e80"/></linearGradient>
+      <radialGradient id="head-shade" cx=".36" cy=".28" r=".8"><stop stop-color="#e5e6dc"/><stop offset=".46" stop-color="#cfd2c5"/><stop offset=".8" stop-color="#a9ae9d"/><stop offset="1" stop-color="#8e9585"/></radialGradient>
+      <linearGradient id="glass-shade" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f8f0" stop-opacity=".7"/><stop offset=".5" stop-color="#bec6b0" stop-opacity=".12"/><stop offset="1" stop-color="#8a957c" stop-opacity=".45"/></linearGradient>
+      <pattern id="fine-grid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M34 0H0V34" fill="none" stroke="#f8f9ef" stroke-opacity=".23" stroke-width=".7"/></pattern>
+      <symbol id="portrait-placeholder" viewBox="0 0 700 900">
+        <path d="M41 900c12-103 61-153 151-184l91-36 12-112h110l12 112 91 36c90 31 139 81 151 184Z" fill="url(#body-shade)"/>
+        <path d="m283 680 67 62 67-62 43 20-62 200h-96l-62-200Z" fill="#a7ad9c" opacity=".65"/>
+        <path d="M295 564h110l12 116-67 62-67-62Z" fill="url(#body-shade)"/>
+        <path d="M230 365c-3-125 37-185 120-185s123 60 120 185l-9 137c-4 69-57 127-111 132-54-5-107-63-111-132Z" fill="url(#head-shade)"/>
+        <path d="M237 400c-39-25-31 82 5 93m221-93c39-25 31 82-5 93" fill="#b8bead"/>
+        <path d="M350 198v419M233 367q117-41 234 0M236 434q114-32 228 0M242 501q108 35 216 0M271 248q-45 190 18 351M429 248q45 190-18 351" stroke="#f5f6ed" stroke-width="1" fill="none" opacity=".35"/>
+        <path d="M41 900c12-103 61-153 151-184l91-36m134 0 91 36c90 31 139 81 151 184" fill="none" stroke="#eceee3" stroke-opacity=".6"/>
+        <path d="M230 365c-3-125 37-185 120-185s123 60 120 185l-9 137c-4 69-57 127-111 132-54-5-107-63-111-132Z" fill="url(#fine-grid)" opacity=".4"/>
+        <path d="M337 405h26m-13-13v26" stroke="#f7f8ee" stroke-width="1.3" opacity=".8"/>
+      </symbol>
+      <symbol id="profile-placeholder" viewBox="0 0 520 820">
+        <path d="M44 820c10-95 59-132 137-163l70-29 8-101-30-9-33-34-31-6 12-35-28-19 39-61c-10-114 19-193 117-203 88-9 159 67 155 173l-6 173-53 104 17 50 56 23c53 25 77 55 83 127Z" fill="url(#body-shade)"/>
+        <path d="M188 363c76-11 168 9 267 51M198 449c82-12 162 5 250 44M251 628l81 33 80-49M231 233c4 107 41 239 90 337M315 162c-9 135 34 295 87 433" fill="none" stroke="#f3f5e9" stroke-width="1" opacity=".35"/>
+        <circle cx="357" cy="408" r="21" fill="none" stroke="#eff1e4" opacity=".5"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="site-header">
+    <a href="#intro" class="wordmark" aria-label="回到开场"><span>YOUR</span><strong>NAME</strong></a>
+    <a href="#intro" class="center-mark" aria-label="回到首页"><svg viewBox="0 0 36 36"><path d="m15 7-6 22h10m8-22-6 22h10"/></svg></a>
+    <div class="header-actions"><a class="index-button" href="#gallery"><svg viewBox="0 0 20 20"><path d="M5 7h10v10H5zM8 7V4h4v3"/></svg><span>INDEX</span></a><button class="menu-toggle" aria-label="打开导航" aria-expanded="false" aria-controls="site-menu"><span></span><span></span></button></div>
+  </header>
+
+  <main id="experience">
+    <div class="stage">
+      <section class="scene hero-scene" aria-label="01 / 开场">
+        <div class="contours hero-contours"></div>
+        <div class="hero-coordinate mono">IMAGE / 01<span>SCROLL TO EXPLORE</span></div>
+        <div class="hero-portrait">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <svg class="hero-sculpture" viewBox="0 0 700 900" role="img" aria-label="主视觉图片占位"><use href="#portrait-placeholder"/></svg>
+          <img class="hero-image user-image" alt="主视觉" hidden>
+          <span class="portrait-label mono">YOUR IMAGE HERE</span>
+        </div>
+        <div class="floating-shell shell-left"><span>02</span><i></i></div><div class="floating-shell shell-right"><span>03</span><i></i></div>
+        <div class="hero-bottom-copy"><div class="placeholder-line"></div><div class="placeholder-line short"></div><span class="mono">TEXT PLACEHOLDER</span></div>
+        <div class="corner-card"><span class="mono">PORTFOLIO / 2026</span><svg viewBox="0 0 70 40"><path d="M8 29 22 11h26l14 18H8Zm14-18 13 18 13-18M8 29l27 8 27-8M35 2v9"/></svg><span class="corner-divider"></span><strong>01 — 03</strong><span class="mono">SCROLL ↓</span></div>
+        <button class="scroll-prompt mono" data-go="gallery"><span>SCROLL TO EXPLORE</span><i>↓</i></button>
+      </section>
+
+      <section class="scene gallery-scene" aria-label="02 / 图片叙事">
+        <div class="contours gallery-contours"></div>
+        <div class="gallery-intro"><span class="mono">02 / SELECTED MOMENTS</span><div class="intro-line"></div><div class="intro-line"></div><div class="intro-line short"></div><span class="mono intro-caption">TEXT PLACEHOLDER</span></div>
+        <div class="gallery-world" aria-label="图片占位画廊"></div>
+        <div class="gallery-quote"><span class="mono">A NOTE / TEXT PLACEHOLDER</span><div class="quote-line"></div><div class="quote-line"></div><div class="quote-line short"></div><svg viewBox="0 0 100 38" aria-hidden="true"><path d="m3 28 50-21-29 26L68 6 46 30l42-16-21 21M8 27l83-4"/></svg></div>
+        <span class="gallery-counter mono"><span id="moment-counter">01</span> / 08</span>
+      </section>
+
+      <section class="scene split-scene" aria-label="03 / 双栏入口">
+        <div class="contours split-contours"></div>
+        <div class="split-portrait split-portrait-left"><svg viewBox="0 0 520 820" aria-label="左侧图片占位" role="img"><use href="#profile-placeholder"/></svg><img class="user-image" alt="左侧图片" hidden><span class="mono">IMAGE / 10</span></div>
+        <div class="split-portrait split-portrait-right"><svg viewBox="0 0 520 820" aria-label="右侧图片占位" role="img"><use href="#profile-placeholder"/></svg><img class="user-image" alt="右侧图片" hidden><span class="mono">IMAGE / 11</span></div>
+        <div class="split-options">
+          <button class="split-option" data-project="0"><span class="mono option-index">01 / TITLE PLACEHOLDER</span><span class="split-heading"><em>YOUR</em><strong>WORK</strong></span><span class="description-skeleton"><i></i><i></i></span><span class="square-arrow">↗</span></button>
+          <button class="split-option" data-project="1"><span class="mono option-index">02 / TITLE PLACEHOLDER</span><span class="split-heading"><em>YOUR</em><strong>WORLD</strong></span><span class="description-skeleton"><i></i><i></i></span><span class="square-arrow">↗</span></button>
+        </div>
+        <span class="split-bottom mono">03 / 03 <i></i> END OF PREVIEW</span>
+      </section>
+    </div>
+    <div class="scroll-space" aria-hidden="true"><div id="intro"></div><div id="gallery"></div><div id="explore"></div></div>
+  </main>
+
+  <nav class="chapter-navigation" id="chapter-navigation" aria-label="章节导航"><a href="#intro" class="active" aria-label="01 开场" aria-current="step"><i></i><span>01</span></a><a href="#gallery" aria-label="02 图片叙事"><i></i><span>02</span></a><a href="#explore" aria-label="03 双栏入口"><i></i><span>03</span></a></nav>
+  <div class="scroll-progress" aria-hidden="true"><span></span></div>
+  <div class="custom-cursor" aria-hidden="true"><span>VIEW ↗</span></div>
+
+  <div class="site-menu" id="site-menu" inert><div class="menu-content"><span class="mono">PORTFOLIO / CONTENT PLACEHOLDERS</span><nav aria-label="主导航"><a href="#intro"><span>01</span>INTRO<i>↗</i></a><a href="#gallery"><span>02</span>MOMENTS<i>↗</i></a><a href="#explore"><span>03</span>EXPLORE<i>↗</i></a></nav><span class="mono menu-note">SCROLL TO MOVE. SCROLL BACK TO REVISIT.</span></div></div>
+
+  <dialog class="image-dialog"><button class="dialog-close" aria-label="关闭预览">×</button><div class="dialog-image"></div><div class="dialog-footer"><span class="mono dialog-label">IMAGE PLACEHOLDER</span><span class="mono">ESC TO CLOSE</span></div></dialog>
+  <div class="live-status" aria-live="polite"></div>
+  <noscript><div class="noscript-message">请开启 JavaScript 以体验滚轮动画。</div></noscript>
+</body>
+</html>
