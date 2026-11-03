@@ -72,9 +72,14 @@
     const entry = content.entries[i];
     $('.split-heading em', button).textContent = entry.title[0];
     $('.split-heading strong', button).textContent = entry.title[1];
+    const hasChinese = /\p{Script=Han}/u.test(entry.title.join(''));
+    $('.split-heading', button).classList.toggle('is-cjk', hasChinese);
+    if (entry.eyebrow) $('.option-index', button).textContent = entry.eyebrow;
+    const entryName = entry.title.join(hasChinese ? '' : ' ');
+    button.setAttribute('aria-label', `查看${entryName}`);
     if (entry.description) { const desc = $('.description-skeleton', button); desc.className = 'entry-description'; desc.textContent = entry.description; }
     fillUserImage($$( '.split-portrait')[i], entry.image);
-    button.addEventListener('click', () => openPreview(entry.image, entry.title.join(' ') + ' / CONTENT PLACEHOLDER'));
+    button.addEventListener('click', () => openPreview(entry.image, entryName + ' / 内容待补充'));
   });
 
   // Original, code-drawn contour field; no external imagery or runtime libraries.

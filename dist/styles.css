@@ -48,3 +48,5 @@
 
 .hero-scene::after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:#282d21;opacity:var(--thumb-tone,0)}
 .stage{background:var(--olive);user-select:none;-webkit-user-select:none}
+.split-heading.is-cjk em{font-family:Georgia,'Songti SC','SimSun',serif;line-height:1.08;letter-spacing:0}
+.split-heading.is-cjk strong{font-family:Arial,'Microsoft YaHei',sans-serif;line-height:1.08;letter-spacing:0;margin-top:0}

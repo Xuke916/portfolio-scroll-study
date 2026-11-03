@@ -8,7 +8,7 @@ window.PORTFOLIO_CONTENT = {
   },
   gallery: Array.from({ length: 8 }, (_, i) => ({ image: "", caption: "IMAGE / " + String(i + 2).padStart(2, "0") })),
   entries: [
-    { title: ["YOUR", "WORK"], description: "", image: "" },
-    { title: ["YOUR", "WORLD"], description: "", image: "" }
+    { title: ["专业", "作品"], eyebrow: "01 / PROFESSIONAL WORK", description: "", image: "" },
+    { title: ["日常", "生活"], eyebrow: "02 / DAILY LIFE", description: "", image: "" }
   ]
 };
