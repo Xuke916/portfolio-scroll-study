@@ -61,8 +61,8 @@
       // A bent, asymmetrical lens with a rounded belly and a pointed tail.
       // Domain warping folds its edge rather than cutting a straight strip.
       float u = p.x / span;
-      float curl = .038 * sin(u * 2.6 + phase)
-                 + .014 * sin(u * 5.4 - phase * .7);
+      float curl = .062 * sin(u * 2.6 + phase)
+                 + .021 * sin(u * 5.4 - phase * .7);
       float belly = sqrt(max(.0, 1. - u * u));
       float taper = .87 - .63 * u;
       float ripple = 1. + .1 * sin(u * 5. + phase * .6);
@@ -85,8 +85,8 @@
       vec2 flow = vec2(along, across);
       flow.x += .012 * sin(across * 18. + uTime * .47);
       flow.y += .008 * sin(along * 21. - uTime * .63);
-      float span = .345 + .035 * sin(uTime * .34);
-      float height = .091 + .025 * sin(uTime * .51) + uEnergy * .022;
+      float span = .26 + .025 * sin(uTime * .34);
+      float height = .102 + .025 * sin(uTime * .51) + uEnergy * .022;
       float distance = flowShape(flow, span, height, uTime * .46);
       float slice = (1. - smoothstep(-.0015, .0025, distance)) * uReveal;
       float edge = 1. - smoothstep(.001, .015, abs(distance));
@@ -207,14 +207,14 @@
         if (!s.reveal) return;
         const normal = [Math.cos(s.angle), Math.sin(s.angle)];
         const tangent = [normal[1], -normal[0]];
-        const span = .345 + .035 * Math.sin(s.time * .34);
-        const height = .091 + .025 * Math.sin(s.time * .51) + s.energy * .022;
+        const span = .26 + .025 * Math.sin(s.time * .34);
+        const height = .102 + .025 * Math.sin(s.time * .51) + s.energy * .022;
         ctx.save(); ctx.beginPath();
         [-1, 1].forEach((side, sideIndex) => {
           for (let i = 0; i <= 80; i++) {
             const u = (sideIndex ? 1 - i / 80 : i / 80) * 2 - 1;
             const a = u * span;
-            const curl = .038 * Math.sin(u * 2.6 + s.time * .46) + .014 * Math.sin(u * 5.4 - s.time * .322);
+            const curl = .062 * Math.sin(u * 2.6 + s.time * .46) + .021 * Math.sin(u * 5.4 - s.time * .322);
             const extent = height * Math.sqrt(Math.max(0, 1 - u * u)) * (.87 - .63 * u) * (1 + .1 * Math.sin(u * 5 + s.time * .276));
             const d = curl + side * extent;
             const x = (s.x + (tangent[0] * a + normal[0] * d) / (4 / 3)) * w;
