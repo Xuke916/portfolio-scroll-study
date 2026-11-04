@@ -64,12 +64,12 @@
     const figure = document.createElement('figure'); figure.className = 'gallery-card';
     figure.style.cssText = `--x:${l.x}%;--mobile-x:${l.mx}%;--y:${l.y}%;--w:${l.w}%;--ratio:${l.r};--slot-color:${l.c}`;
     const caption = document.createElement('figcaption'); caption.textContent = data.caption;
-    const button = document.createElement('button'); button.className = 'image-slot';
-    button.setAttribute('aria-label', `查看${data.caption}占位预览`);
-    button.innerHTML = `<span class="slot-grid"></span><span class="slot-cross"></span><span class="slot-corner">↗</span><span class="slot-number">${String(i + 2).padStart(2, '0')} / IMAGE PLACEHOLDER</span>`;
-    addImage(button, data.image, data.caption);
-    button.addEventListener('click', () => openPreview(data.image, data.caption));
-    figure.append(caption, button); world.append(figure);
+    const link = document.createElement('a'); link.className = 'image-slot';
+    link.href = '#explore';
+    link.setAttribute('aria-label', `${data.caption}：前往专业作品与日常生活`);
+    link.innerHTML = `<span class="slot-grid"></span><span class="slot-cross"></span><span class="slot-corner">↗</span><span class="slot-number">${String(i + 2).padStart(2, '0')} / IMAGE PLACEHOLDER</span>`;
+    addImage(link, data.image, data.caption);
+    figure.append(caption, link); world.append(figure);
   });
   const cards = $$('.gallery-card');
   // Keep stable element references out of the animation loop.
@@ -142,18 +142,32 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
-  function go(chapter) {
+  function go(chapter, { duration, focusDestination = false } = {}) {
     if (!(chapter in CHAPTERS)) return;
     if (menuOpen) setMenu(false);
     target = CHAPTERS[chapter] * unit / TIMELINE_SCALE;
-    if (reduced.matches) { current = target; navigation = null; writeScroll(current); }
-    else navigation = { from: current, to: target, started: null, duration: clamp(Math.abs(target-current)/unit*95, 320, 720) };
+    const onComplete = focusDestination && chapter === 'explore'
+      ? () => $('.split-option', ui.splitOptions).focus({ preventScroll: true }) : null;
+    if (reduced.matches) {
+      current = target; navigation = null; writeScroll(current); render(current); onComplete?.();
+    } else navigation = {
+      from: current, to: target, started: null,
+      duration: duration ?? clamp(Math.abs(target-current)/unit*95, 320, 720), onComplete
+    };
     requestTick();
     history.replaceState(null, '', '#' + chapter);
   }
   $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
     const id = a.getAttribute('href').slice(1);
-    if (id in CHAPTERS) { e.preventDefault(); go(id); }
+    if (id in CHAPTERS) {
+      e.preventDefault();
+      const fromGallery = a.classList.contains('image-slot');
+      if (fromGallery) {
+        aimX = aimY = 0; cursorActive = false; cursor.classList.remove('visible');
+      }
+      go(id, fromGallery ? { duration: 850, focusDestination: true } : {});
+    }
   }));
   $$('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 
@@ -260,12 +274,13 @@
   }
   function tick(time){
     frame=0;
+    let onComplete = null;
     const dt=lastTime?Math.min(64,time-lastTime):16.67;lastTime=time;
     if(navigation){
       if(navigation.started===null)navigation.started=time;
       const p=clamp((time-navigation.started)/navigation.duration);
       current=mix(navigation.from,navigation.to,1-Math.pow(1-p,3));
-      if(p===1){current=target;navigation=null;}
+      if(p===1){current=target;onComplete=navigation.onComplete;navigation=null;}
     }else{
       const factor=reduced.matches?1:1-Math.exp(-dt/SCROLL_DAMPING_MS);
       current=mix(current,target,factor);
@@ -278,6 +293,7 @@
     // The native scroll position and visible frame move together, with no second trailing filter.
     if(current!==lastWrittenScroll)writeScroll(current);
     render(current);
+    onComplete?.();
     if(navigation||current!==target||mouseX!==aimX||mouseY!==aimY)frame=requestAnimationFrame(tick);else lastTime=0;
   }
   function requestTick(){if(!frame)frame=requestAnimationFrame(tick);}
