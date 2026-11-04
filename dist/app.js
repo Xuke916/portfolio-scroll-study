@@ -7,6 +7,8 @@
   const smooth = (v) => { const t = clamp(v); return t * t * (3 - 2 * t); };
   const range = (v, a, b) => clamp((v - a) / (b - a));
   const content = window.PORTFOLIO_CONTENT;
+  const photoHero = !!(content.heroImage && content.heroHelmetImage);
+  document.body.classList.toggle('hero-photo-mode', photoHero);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = matchMedia('(pointer: fine)');
   const stage = $('.stage'), hero = $('.hero-scene'), portrait = $('.hero-portrait');
@@ -185,14 +187,14 @@
     const splitEnter=smooth(range(t,8.35,9.9));
     if(t<5.3){
     const heroScale = mix(mix(1.18, .95, heroP), mobile ? .55 : .64, thumb);
-    const heroY = mix(mix(1, -4, heroP), mobile ? -9 : -13, thumb);
-    portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*5}deg) rotateY(${px*10}deg) scale(${heroScale})`;
+    const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
+    portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*(photoHero?1.5:5)}deg) rotateY(${px*(photoHero?3:10)}deg) scale(${heroScale})`;
     const cardHeight = mobile ? unit*.38 : Math.min(unit*.46,innerWidth*.36/1.63);
     const insetY = (1-cardHeight/unit)*50*thumb;
     const insetX = (mobile ? 7 : 32)*thumb;
     hero.style.clipPath = `inset(${insetY}% ${insetX}%)`;
     hero.style.opacity = 1-messageOut;
-    hero.style.setProperty('--thumb-tone',thumb*.88);
+    hero.style.setProperty('--thumb-tone',thumb*(photoHero ? .60 : .88));
     hero.style.transform = `translate3d(0,${-messageOut*unit*.2}px,0) scale(${mix(1,.88,messageOut)})`;
     ui.heroLight.style.opacity = 1-thumb*.5;
     ui.heroLight.style.setProperty('--light-x',`${50+px*35}%`);
@@ -270,6 +272,7 @@
     ring.style.visibility=t<8.3||t>9.95?'hidden':'visible';
     gallery.style.visibility=t>10||t<4.29?'hidden':'visible';
     split.style.visibility=t<8.34?'hidden':'visible';
+    window.HeroFluid?.setActive(t<5.2&&!menuOpen&&!homeSuspended);
   }
   function writeScroll(value){
     lastWrittenScroll=value;
@@ -345,6 +348,7 @@
   window.PortfolioHome = {
     pause() {
       homeSuspended = true;
+      window.HeroFluid?.setActive(false);
       if (frame) cancelAnimationFrame(frame);
       frame = 0; navigation = null; target = current; lastTime = 0;
       aimX = aimY = mouseX = mouseY = 0;

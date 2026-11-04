@@ -2,7 +2,8 @@
 // Put image files in dist/assets/ and use paths such as "assets/portrait.webp".
 window.PORTFOLIO_CONTENT = {
   name: ["YOUR", "NAME"],
-  heroImage: "",
+  heroImage: "assets/hero-person.png",
+  heroHelmetImage: "assets/hero-helmet.png",
   message: {
     lines: ["YOUR STORY GOES HERE", "YOUR WORDS GO HERE"]
   },
