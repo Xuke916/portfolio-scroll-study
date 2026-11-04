@@ -7,9 +7,11 @@
   <meta name="description" content="A scroll-driven portfolio study. Content and image placeholders are ready to replace.">
   <title>Portfolio / Scroll Study</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%231e90ff'/%3E%3Cpath d='m14 10-4 20h8m8-20-4 20h8' fill='none' stroke='%230a2447' stroke-width='4'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=blue-v1">
-  <script src="content.js" defer></script>
-  <script src="app.js?v=gallery-nav-v1" defer></script>
+  <link rel="stylesheet" href="styles.css?v=interiors-v1">
+  <link rel="stylesheet" href="pages.css?v=interiors-v1">
+  <script src="content.js?v=interiors-v1" defer></script>
+  <script src="app.js?v=interiors-v1" defer></script>
+  <script src="pages.js?v=interiors-v1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#chapter-navigation">跳转至章节导航</a>
@@ -90,6 +92,16 @@
     </div>
     <div class="scroll-space" aria-hidden="true"><div id="intro"></div><div id="message"></div><div id="gallery"></div><div id="explore"></div></div>
   </main>
+
+  <main class="detail-pages" id="detail-pages" hidden tabindex="-1" aria-label="作品与生活内页"></main>
+  <div class="route-transition" hidden aria-hidden="true">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+      <defs><mask id="route-cutout-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900"><rect width="1600" height="900" fill="white"/><g class="route-cutout"><path d="M34 8 14 83H46L51 65H37L53 8ZM65 8 45 83H77L82 65H68L84 8Z" fill="black"/></g></mask></defs>
+      <rect width="1600" height="900" fill="#1e90ff" mask="url(#route-cutout-mask)"/>
+      <g class="route-mark-echo" fill="#f3f3eb" transform="translate(770 420) scale(2.8) translate(-50 -50)"><path d="M34 8 14 83H46L51 65H37L53 8ZM65 8 45 83H77L82 65H68L84 8Z"/></g>
+    </svg>
+    <span class="route-transition-caption mono"></span>
+  </div>
 
   <nav class="chapter-navigation" id="chapter-navigation" aria-label="章节导航"><a href="#intro" class="active" aria-label="01 开场" aria-current="step"><i></i><span>01</span></a><a href="#message" aria-label="02 缩小画面"><i></i><span>02</span></a><a href="#gallery" aria-label="03 图片叙事"><i></i><span>03</span></a><a href="#explore" aria-label="04 双栏入口"><i></i><span>04</span></a></nav>
   <div class="scroll-progress" aria-hidden="true"><span></span></div>

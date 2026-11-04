@@ -25,6 +25,7 @@
   const SCROLL_DAMPING_MS = 70;
   const POINTER_DAMPING_MS = 90;
   let lastWrittenScroll = scrollY, navigation = null;
+  let homeSuspended = false;
 
   // Each section's distance is expressed in viewport heights, not wheel events.
   // Native scrolling also supports trackpads, touch, keyboard, and scrollbars.
@@ -96,7 +97,7 @@
     button.setAttribute('aria-label', `查看${entryName}`);
     if (entry.description) { const desc = $('.description-skeleton', button); desc.className = 'entry-description'; desc.textContent = entry.description; }
     fillUserImage($$( '.split-portrait')[i], entry.image);
-    button.addEventListener('click', () => openPreview(entry.image, entryName + ' / 内容待补充'));
+    button.addEventListener('click', () => window.PortfolioPages?.open(i === 0 ? 'work' : 'life'));
   });
 
   // Original, code-drawn contour field; no external imagery or runtime libraries.
@@ -129,6 +130,7 @@
     menu.inert = !open; $('.stage').inert = open; $('.chapter-navigation').inert = open;
     toggle.setAttribute('aria-expanded', String(open)); toggle.setAttribute('aria-label', open ? '关闭导航' : '打开导航');
     document.body.style.overflow = open ? 'hidden' : '';
+    document.dispatchEvent(new CustomEvent('portfolio:menu', { detail: { open } }));
     if (open) { cursor.classList.remove('visible'); $('a', menu).focus({preventScroll:true}); }
     else toggle.focus({preventScroll:true});
     requestTick();
@@ -145,6 +147,7 @@
   function go(chapter, { duration, focusDestination = false } = {}) {
     if (!(chapter in CHAPTERS)) return;
     if (menuOpen) setMenu(false);
+    if (homeSuspended) { window.PortfolioPages?.home(chapter); return; }
     target = CHAPTERS[chapter] * unit / TIMELINE_SCALE;
     const onComplete = focusDestination && chapter === 'explore'
       ? () => $('.split-option', ui.splitOptions).focus({ preventScroll: true }) : null;
@@ -274,6 +277,7 @@
   }
   function tick(time){
     frame=0;
+    if (homeSuspended) { lastTime = 0; return; }
     let onComplete = null;
     const dt=lastTime?Math.min(64,time-lastTime):16.67;lastTime=time;
     if(navigation){
@@ -296,16 +300,18 @@
     onComplete?.();
     if(navigation||current!==target||mouseX!==aimX||mouseY!==aimY)frame=requestAnimationFrame(tick);else lastTime=0;
   }
-  function requestTick(){if(!frame)frame=requestAnimationFrame(tick);}
+  function requestTick(){if(!homeSuspended&&!frame)frame=requestAnimationFrame(tick);}
   addEventListener('scroll',()=>{
+    if (homeSuspended) return;
     const actual=scrollY;
     if(Math.abs(actual-lastWrittenScroll)<1)return;
     navigation=null;current=target=lastWrittenScroll=actual;requestTick();
   },{passive:true});
-  addEventListener('resize',()=>{unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;navigation=null;target=current=lastWrittenScroll=scrollY;requestTick();},{passive:true});
+  addEventListener('resize',()=>{if(homeSuspended)return;unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;navigation=null;target=current=lastWrittenScroll=scrollY;requestTick();},{passive:true});
   addEventListener('touchstart',()=>{navigation=null;target=current;},{passive:true});
   reduced.addEventListener('change',()=>{if(reduced.matches){navigation=null;aimX=aimY=0;}requestTick();});
   document.addEventListener('pointermove',e=>{
+    if (homeSuspended) return;
     if(!finePointer.matches||e.pointerType==='touch')return;
     if(!menuOpen&&!dialog.open&&!reduced.matches){aimX=clamp(e.clientX/innerWidth*2-1,-1,1);aimY=clamp(e.clientY/innerHeight*2-1,-1,1);requestTick();}
     const slot=e.target.closest?.('.image-slot');
@@ -318,6 +324,7 @@
   document.addEventListener('pointerleave',()=>{aimX=aimY=0;cursorActive=false;cursor.classList.remove('visible');requestTick();});
   $$('.image-slot').forEach(slot=>slot.addEventListener('pointerleave',()=>{slot.style.transform='';}));
   addEventListener('wheel',e=>{
+    if (homeSuspended) return;
     if(menuOpen||dialog.open||e.ctrlKey||reduced.matches||!e.cancelable||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;
     const delta=e.deltaY*(e.deltaMode===1?18:e.deltaMode===2?unit:1);
     if(!delta)return;
@@ -335,5 +342,24 @@
   const initial=location.hash.slice(1);
   if(initial in CHAPTERS)writeScroll(CHAPTERS[initial]*unit/TIMELINE_SCALE);
   current=target=scrollY;render(current);
+  window.PortfolioHome = {
+    pause() {
+      homeSuspended = true;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0; navigation = null; target = current; lastTime = 0;
+      aimX = aimY = mouseX = mouseY = 0;
+      cursorActive = false; cursor.classList.remove('visible');
+      if (menuOpen) setMenu(false);
+      return { scroll: current };
+    },
+    resume(chapter = 'explore', savedScroll) {
+      homeSuspended = false;
+      unit = $('.scroll-space').offsetHeight / TOTAL_HEIGHT;
+      current = target = savedScroll ?? (CHAPTERS[chapter] ?? CHAPTERS.explore) * unit / TIMELINE_SCALE;
+      activeChapter = -1; lastTime = 0; writeScroll(current); render(current);
+    },
+    preview: openPreview,
+    closeMenu() { if (menuOpen) setMenu(false); }
+  };
   document.documentElement.classList.add('ready');
 })();
