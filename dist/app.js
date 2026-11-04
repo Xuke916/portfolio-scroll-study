@@ -195,6 +195,9 @@
     hero.style.clipPath = `inset(${insetY}% ${insetX}%)`;
     hero.style.opacity = 1-messageOut;
     hero.style.setProperty('--thumb-tone',thumb*(photoHero ? .60 : .88));
+    hero.style.setProperty('--thumb-progress',thumb);
+    if (photoHero) hero.style.filter = `grayscale(${thumb})`;
+    window.HeroFluid?.setThumbnail(thumb);
     hero.style.transform = `translate3d(0,${-messageOut*unit*.2}px,0) scale(${mix(1,.88,messageOut)})`;
     ui.heroLight.style.opacity = 1-thumb*.5;
     ui.heroLight.style.setProperty('--light-x',`${50+px*35}%`);
