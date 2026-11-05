@@ -100,3 +100,17 @@
  .menu-content nav>a{font-size:11vw;padding:9px 0}
 }
 @media(prefers-reduced-motion:reduce){.route-transition{display:none!important}.detail-object,.detail-hero-scribble,.detail-collage-card,.project-track{will-change:auto}}
+
+/* Professional projects use a single cover and caption in each horizontal panel. */
+.detail-route[data-project-layout="covers"] .projects-heading{top:12%}
+.detail-route[data-project-layout="covers"] .project-art-main{left:10%;top:30%;width:78%;height:45%}
+.detail-route[data-project-layout="covers"] .project-panel-title{left:10%;top:79%;max-width:78%;display:flex;align-items:baseline;gap:18px}
+.detail-route[data-project-layout="covers"] .project-panel-title>.mono{font-size:8px;white-space:nowrap}
+.detail-route[data-project-layout="covers"] .project-panel-title h3{font-size:clamp(24px,3vw,44px);margin:0;line-height:1.2;letter-spacing:-.03em}
+@media(max-width:600px){
+ .detail-route[data-project-layout="covers"] .projects-heading{top:13%}
+ .detail-route[data-project-layout="covers"] .project-art-main{left:8%;top:32%;width:84%;height:37%}
+ .detail-route[data-project-layout="covers"] .project-panel-title{left:8%;top:73%;max-width:84%;gap:12px}
+ .detail-route[data-project-layout="covers"] .project-panel-title>.mono{font-size:7px}
+ .detail-route[data-project-layout="covers"] .project-panel-title h3{font-size:28px}
+}

@@ -12,8 +12,8 @@ window.PORTFOLIO_CONTENT = {
     work: {
       title: ["专业", "作品"], english: "PROFESSIONAL WORK", mark: "WORK",
       heroImage: "", statementImage: "", statement: ["探索", "创造", "体验"],
-      galleryTitle: "专业项目", projectsTitle: "个人项目",
-      projects: Array.from({ length: 3 }, (_, i) => ({ title: "项目 / " + String(i + 1).padStart(2, "0"), image: "", detailImage: "", category: "PROJECT / CONTENT PLACEHOLDER" }))
+      galleryTitle: "专业项目", projectsTitle: "个人项目", showGallery: false, projectLayout: "covers",
+      projects: ["项目01", "项目02", "项目03", "other work"].map(title => ({ title, image: "", category: "" }))
     },
     life: {
       title: ["日常", "生活"], english: "DAILY LIFE", mark: "LIFE",

@@ -24,10 +24,16 @@
   function build(name) {
     data = window.PORTFOLIO_CONTENT.pages[name];
     const projects = data.projects;
+    const hasCollage = data.showGallery !== false, coverOnly = data.projectLayout === 'covers';
+    const sections = [
+      ['hero', '开场'], ['story', '创作介绍'],
+      ...(hasCollage ? [['collage', data.galleryTitle]] : []),
+      ['projects', data.projectsTitle]
+    ];
     root.innerHTML = `
       <button class="detail-back mono" data-return>↖ 返回入口</button>
-      <nav class="detail-section-nav" id="detail-section-navigation" aria-label="内页章节"><button data-section="hero" aria-label="开场" class="active"><i></i><span>01</span></button><button data-section="story" aria-label="创作介绍"><i></i><span>02</span></button><button data-section="collage" aria-label="${esc(data.galleryTitle)}"><i></i><span>03</span></button><button data-section="projects" aria-label="${esc(data.projectsTitle)}"><i></i><span>04</span></button></nav>
-      <article class="detail-route" data-route="${name}">
+      <nav class="detail-section-nav" id="detail-section-navigation" aria-label="内页章节">${sections.map(([id,label],i)=>`<button data-section="${id}" aria-label="${esc(label)}" class="${i===0?'active':''}"><i></i><span>${String(i+1).padStart(2,'0')}</span></button>`).join('')}</nav>
+      <article class="detail-route" data-route="${name}" data-project-layout="${coverOnly?'covers':'collage'}">
         <section class="detail-section detail-hero" data-detail-section="hero">
           <div class="detail-sticky detail-hero-view">
             <span class="detail-top-label mono">${esc(data.english)} / 2026</span>
@@ -44,15 +50,15 @@
           <div class="detail-statement-media">${media(data.statementImage, 'IMAGE / 02')}<span class="mono">TEXT / IMAGE PLACEHOLDER</span></div>
           <span class="detail-story-bottom mono">SCROLL TO REVEAL ↓</span>
         </div></section>
-        <section class="detail-section detail-collage" data-detail-section="collage"><div class="detail-sticky">
+        ${hasCollage ? `<section class="detail-section detail-collage" data-detail-section="collage"><div class="detail-sticky">
           <span class="detail-section-kicker mono">03 / SELECTED VISUALS</span><h2 class="detail-collage-heading"><em>${esc(data.galleryTitle.slice(0, 2))}</em><strong>${esc(data.galleryTitle.slice(2))}</strong></h2>
           ${[0, 1, 2, 3].map((i) => `<figure class="detail-collage-card collage-${i}">${media(projects[i % projects.length].detailImage || projects[i % projects.length].image, 'IMAGE / '+String(i+3).padStart(2,'0'))}<figcaption class="mono">VISUAL / ${String(i+1).padStart(2,'0')}</figcaption></figure>`).join('')}
           <button class="detail-collage-next mono" data-section="projects">${esc(data.projectsTitle)} ↘</button>
-        </div></section>
+        </div></section>` : ''}
         <section class="detail-section detail-horizontal" data-detail-section="projects"><div class="detail-sticky project-viewport" tabindex="0" aria-label="${esc(data.projectsTitle)}，向下滚动以横向浏览">
-          <header class="projects-heading"><span class="mono">04 / ${name === 'work' ? 'PERSONAL PROJECTS' : 'EVERYDAY MOMENTS'}</span><h2>${esc(data.projectsTitle)}</h2></header>
+          <header class="projects-heading"><span class="mono">${String(sections.length).padStart(2,'0')} / ${name === 'work' ? 'PERSONAL PROJECTS' : 'EVERYDAY MOMENTS'}</span><h2>${esc(data.projectsTitle)}</h2></header>
           <span class="projects-wheel-hint mono">向下滚动 · 横向浏览 <i>→</i></span>
-          <div class="project-track">${projects.map((project,i)=>`<section class="project-panel" aria-label="${esc(project.title)}"><div class="project-panel-title"><span class="mono">${String(i+1).padStart(2,'0')} / ${String(projects.length).padStart(2,'0')}</span><h3>${esc(project.title)}</h3><span class="mono">${esc(project.category)}</span></div><button class="project-art project-art-main" data-project-index="${i}" aria-label="查看${esc(project.title)}">${media(project.image,'IMAGE / '+String(i*3+7).padStart(2,'0'))}<span class="project-open">↗</span></button><button class="project-art project-art-top" data-project-index="${i}" aria-label="查看${esc(project.title)}细节">${media(project.detailImage,'DETAIL / '+String(i+1).padStart(2,'0'))}</button><div class="project-art project-art-small" aria-hidden="true">${media('', 'VISUAL / '+String(i+1).padStart(2,'0'))}</div><span class="project-panel-foot mono">${esc(project.category)}</span></section>`).join('')}</div>
+          <div class="project-track">${projects.map((project,i)=>`<section class="project-panel" aria-label="${esc(project.title)}"><div class="project-panel-title"><span class="mono">${String(i+1).padStart(2,'0')} / ${String(projects.length).padStart(2,'0')}</span><h3>${esc(project.title)}</h3>${coverOnly?'':`<span class="mono">${esc(project.category)}</span>`}</div><button class="project-art project-art-main" data-project-index="${i}" aria-label="查看${esc(project.title)}">${media(project.image,coverOnly?'COVER / '+String(i+1).padStart(2,'0'):'IMAGE / '+String(i*3+7).padStart(2,'0'))}<span class="project-open">↗</span></button>${coverOnly?'':`<button class="project-art project-art-top" data-project-index="${i}" aria-label="查看${esc(project.title)}细节">${media(project.detailImage,'DETAIL / '+String(i+1).padStart(2,'0'))}</button><div class="project-art project-art-small" aria-hidden="true">${media('', 'VISUAL / '+String(i+1).padStart(2,'0'))}</div><span class="project-panel-foot mono">${esc(project.category)}</span>`}</section>`).join('')}</div>
           <div class="projects-controls"><span class="mono"><b class="project-current">01</b> / ${String(projects.length).padStart(2,'0')}</span><div class="project-dots">${projects.map((p,i)=>`<button data-project-position="${i}" aria-label="前往${esc(p.title)}" class="${i===0?'active':''}"></button>`).join('')}</div><span class="projects-mini-progress"><i></i></span></div>
         </div></section>
         <footer class="detail-footer" data-detail-section="footer"><span class="mono">CONTINUE EXPLORING</span><a class="detail-other-route" href="#${name==='work'?'life':'work'}" data-open-page="${name==='work'?'life':'work'}"><em>${name==='work'?'日常':'专业'}</em><strong>${name==='work'?'生活':'作品'}</strong><span>↗</span></a><button class="detail-footer-home mono" data-return>↖ 返回专业作品 / 日常生活入口</button><span class="detail-footer-copy mono">PORTFOLIO / CONTENT PLACEHOLDERS / 2026</span></footer>
@@ -92,16 +98,19 @@
     const sp=clamp((y-s.story.start)/Math.max(1,s.story.length-h));
     ui.storyLines.forEach((line,i)=>{line.style.transform=`translate3d(${(i%2?1:-1)*sp*w*.2+mouseX*(i+1)*4}px,${-sp*h*.13}px,0)`;line.style.opacity=1-smooth((sp-.45)/.55)*.85;});
     ui.statement.style.transform=`translate3d(calc(-50% + ${mouseX*12}px),calc(-50% + ${mouseY*8}px),0) rotate(${mix(-8,0,sp)}deg) scale(${mix(.58,2.6,smooth(sp))})`;
-    const cp=clamp((y-s.collage.start)/Math.max(1,s.collage.length-h));
-    ui.collageCards.forEach((card,i)=>card.style.transform=`translate3d(${-mouseX*(i+1)*4}px,${-cp*h*(.12+i*.07)-mouseY*6}px,0)`);
-    ui.collageTitle.style.transform=`translateY(${-cp*h*.07}px)`;
+    if(s.collage){
+      const cp=clamp((y-s.collage.start)/Math.max(1,s.collage.length-h));
+      ui.collageCards.forEach((card,i)=>card.style.transform=`translate3d(${-mouseX*(i+1)*4}px,${-cp*h*(.12+i*.07)-mouseY*6}px,0)`);
+      ui.collageTitle.style.transform=`translateY(${-cp*h*.07}px)`;
+    }
     const x=clamp((y-s.projects.start)*1.35,0,metrics.travel);
     ui.track.style.transform=`translate3d(${-x}px,0,0)`;
     const index=clamp(Math.round(x/metrics.panelWidth),0,ui.panels.length-1);
     ui.projectCurrent.textContent=String(index+1).padStart(2,'0');
     ui.projectDots.forEach((b,i)=>{b.classList.toggle('active',i===index);if(i===index)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');});
     ui.miniProgress.style.transform=`scaleX(${metrics.travel?x/metrics.travel:1})`;
-    const active=y<s.story.start-h*.2?0:y<s.collage.start-h*.2?1:y<s.projects.start-h*.2?2:3;
+    let active=0;
+    ui.sectionButtons.forEach((button,i)=>{if(y>=s[button.dataset.section].start-h*.2)active=i;});
     ui.sectionButtons.forEach((button,i)=>{button.classList.toggle('active',i===active);if(i===active)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
     progress.style.transform=`scaleX(${clamp(y/Math.max(1,metrics.max))})`;
     document.documentElement.style.setProperty('--header-color','#f3f3eb');
