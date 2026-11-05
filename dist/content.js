@@ -1,7 +1,7 @@
 // Replace these values when your final text and images are ready.
 // Put image files in dist/assets/ and use paths such as "assets/portrait.webp".
 window.PORTFOLIO_CONTENT = {
-  name: ["YOUR", "NAME"],
+  name: ["XU", "KE"],
   heroImage: "assets/hero-person.png",
   heroHelmetImage: "assets/hero-helmet.png",
   message: {

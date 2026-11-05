@@ -21,9 +21,12 @@
   let frame = 0, previous = 0, lastInput = -Infinity, lastPoint = null, draws = 0;
   let thumbnail = clamp(Number(scene.style.getPropertyValue('--thumb-progress')) || 0);
   let pending = [], field, width = 1, height = 1;
+  const IDLE_GAP = 2000, SWEEP_DURATION = 2600;
+  let idleTimer = 0, cycle = null, cycles = 0, driver = 'none', currentFade = 0;
 
   // Both the helmet reveal and blank-space shapes sample one screen-space
-  // velocity field. There is no time-driven noise or automatic cursor path.
+  // velocity field. The idle pass feeds a curved stroke into that same solver;
+  // real pointer input can take over without switching to a separate effect.
   class FlowField {
     constructor(w, h) {
       this.w = w; this.h = h; this.n = w * h;
@@ -245,8 +248,33 @@
 
   function interactive() {return ready && wanted && !failed && !document.hidden && !reduced.matches && thumbnail < .995;}
   function mode(value) {(renderer?.surface || canvas).dataset.mode = value;}
+  function cancelIdle() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer=0;cycle=null;
+  }
+  function armIdle() {
+    if (!interactive() || thumbnail>=.02 || idleTimer || frame || cycle) return;
+    renderer.surface.dataset.idleGap=String(IDLE_GAP);
+    idleTimer=setTimeout(() => {
+      idleTimer=0;
+      if (!interactive() || thumbnail>=.02) return;
+      cycle={start:performance.now(),point:null};driver='ambient';previous=0;
+      field.clear();pending=[];lastPoint=null;
+      renderer.surface.dataset.cycle=String(++cycles);
+      frame=requestAnimationFrame(tick);
+    },IDLE_GAP);
+  }
+  function idlePoint(progress) {
+    // A broad left-to-right sweep returns along a slightly higher curve. Map
+    // portrait coordinates into screen space so it stays on the head at any size.
+    const angle=progress*Math.PI*2;
+    const x=.5-.36*Math.cos(angle),y=.52+.055*Math.sin(angle)+.018*Math.sin(angle*2);
+    const p=portrait.getBoundingClientRect(),s=scene.getBoundingClientRect();
+    return {x:(p.left-s.left+x*p.width)/s.width,y:(p.top-s.top+y*p.height)/s.height};
+  }
   function draw(fade = 0) {
     if (!ready) return;
+    currentFade=fade;
     const p = portrait.getBoundingClientRect(), s = scene.getBoundingClientRect();
     const state = {fade:fade * (1-thumbnail)**2,
       rect:[(p.left-s.left)/s.width,(p.top-s.top)/s.height,p.width/s.width,p.height/s.height]};
@@ -255,8 +283,10 @@
     surface.dataset.frames=String(++draws);surface.dataset.strength=field.peak.toFixed(3);
     surface.dataset.fade=state.fade.toFixed(3);
     surface.dataset.pointer=lastPoint ? `${lastPoint.x.toFixed(3)},${lastPoint.y.toFixed(3)}` : '';
+    surface.dataset.driver=driver;
   }
   function stop(reason) {
+    cancelIdle();driver='none';
     cancelAnimationFrame(frame);frame=0;previous=0;pending=[];lastPoint=null;lastInput=-Infinity;
     if (field) field.clear();
     if (ready) draw();
@@ -265,30 +295,44 @@
   function tick(now) {
     frame=0;
     if (!interactive()) return;
-    const age=now-lastInput;
-    if (age>=620) {stop('idle');return;}
     const dt=previous ? clamp(now-previous,8,33.334) : 16.667;previous=now;
-    // Let the last impulse settle briefly, then hold its shape while it clears.
-    // A stationary cursor never adds force or starts another animation.
+    if (cycle) {
+      const progress=clamp((now-cycle.start)/SWEEP_DURATION),point=idlePoint(progress);
+      const strokes=cycle.point ? [{px:cycle.point.x,py:cycle.point.y,...point}] : [];
+      field.step(dt,strokes);cycle.point=point;lastInput=now;
+      renderer.surface.dataset.sweep=progress<.5?'right':'left';
+      draw(smooth(progress/.08));mode('ambient');
+      if (progress>=1) cycle=null;
+      frame=requestAnimationFrame(tick);return;
+    }
+    const age=now-lastInput;
+    if (age>=620) {stop('idle');armIdle();return;}
+    // Let either source's last impulse settle, then clear it before the pause.
     if (age<140 || pending.length) field.step(dt,pending.splice(0));
     const fade=1-smooth((age-100)/500);
-    draw(fade);mode(age<100?'pointer':'settling');
+    draw(fade);mode(driver==='ambient'?'ambient-settling':age<100?'pointer':'settling');
     frame=requestAnimationFrame(tick);
   }
   function setActive(active) {
     if (wanted===!!active) return;
     wanted=!!active;
     stop(!wanted?'paused':reduced.matches?'static':thumbnail>=.995?'thumbnail':'idle');
+    armIdle();
   }
   function setThumbnail(progress) {
     const next=clamp(progress);
     if (Math.abs(next-thumbnail)<.0001) return;
     thumbnail=next;air.style.opacity=String(1-thumbnail);
     if (!ready) return;
+    if (next>=.02) {
+      cancelIdle();
+      if (driver==='ambient' && frame) stop('idle');
+    }
     if (next>=.995) {if (frame || (renderer.surface).dataset.mode!=='thumbnail') stop('thumbnail');}
     else {
-      draw(frame ? 1-smooth((performance.now()-lastInput-100)/500) : 0);
+      draw(currentFade);
       if (!frame) mode(!wanted?'paused':reduced.matches?'static':'idle');
+      armIdle();
     }
   }
   function resize() {
@@ -304,6 +348,7 @@
       airRenderer.surface.width=Math.round(width*scale);airRenderer.surface.height=Math.round(height*scale);
     }
     stop(!wanted?'paused':reduced.matches?'static':thumbnail>=.995?'thumbnail':'idle');
+    armIdle();
   }
   document.addEventListener('pointermove',event => {
     if (!interactive() || event.pointerType==='touch') {lastPoint=null;return;}
@@ -320,6 +365,7 @@
         if (distance<.2) continue;
         // Discard re-entry jumps, not continuous strokes across the blank space.
         if (now-lastPoint.time<150 && distance<Math.max(width,height)*.65) {
+          cancelIdle();driver='pointer';
           pending.push({px:lastPoint.x,py:lastPoint.y,x,y});lastInput=now;
           (renderer.surface).dataset.input=`${x.toFixed(3)},${y.toFixed(3)}`;
         }
@@ -329,9 +375,13 @@
     if (pending.length && !frame) {previous=0;frame=requestAnimationFrame(tick);}
   },{passive:true});
   document.addEventListener('pointerleave',() => {lastPoint=null;});
-  document.addEventListener('visibilitychange',() => stop(document.hidden?'paused':!wanted?'paused':'idle'));
+  document.addEventListener('visibilitychange',() => {
+    stop(document.hidden||!wanted?'paused':reduced.matches?'static':'idle');armIdle();
+  });
   window.addEventListener('resize',resize,{passive:true});
-  reduced.addEventListener('change',() => stop(reduced.matches?'static':!wanted?'paused':'idle'));
+  reduced.addEventListener('change',() => {
+    stop(reduced.matches?'static':!wanted?'paused':'idle');armIdle();
+  });
   canvas.addEventListener('webglcontextlost',event => {
     event.preventDefault();failed=true;stop('paused');portrait.classList.remove('fluid-ready');
     canvas.style.visibility='hidden';

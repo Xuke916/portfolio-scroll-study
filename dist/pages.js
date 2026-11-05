@@ -205,7 +205,7 @@
       $('.skip-link').href='#chapter-navigation';
       root.hidden=true;root.inert=true;document.body.classList.remove('detail-mode','detail-light');delete document.body.dataset.page;delete document.body.dataset.project;
       home.inert=false;window.PortfolioHome.resume(chapter,restore&&savedHome?.hash===('#'+chapter)?savedHome.scroll:undefined);
-      document.title='Portfolio / Scroll Study';
+      document.title=window.PORTFOLIO_CONTENT.name.join(' ')+' / Portfolio';
     }else{
       const info=projectInfo(to);
       window.PortfolioHome.pause();document.body.classList.add('detail-mode');document.body.classList.toggle('detail-light',to==='life');document.body.dataset.page=info?'project':to;
