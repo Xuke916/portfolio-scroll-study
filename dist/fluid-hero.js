@@ -21,7 +21,7 @@
   let frame = 0, previous = 0, lastInput = -Infinity, lastPoint = null, draws = 0;
   let thumbnail = clamp(Number(scene.style.getPropertyValue('--thumb-progress')) || 0);
   let pending = [], field, width = 1, height = 1;
-  const IDLE_GAP = 2000, SWEEP_DURATION = 2600, HANDOFF_DURATION = 220;
+  const IDLE_GAP = 2000, SWEEP_DURATION = 2300, HANDOFF_DURATION = 220;
   let idleTimer = 0, cycle = null, cycles = 0, driver = 'none', currentFade = 0;
   let handoff = null, pointerBlend = 1;
 
@@ -50,18 +50,37 @@
       const {w, h, x, y} = this;
       const radius = Math.min(18, Math.max(10, Math.min(w, h) * .22)) * (stroke.radiusScale ?? 1);
       const dx = (stroke.x - stroke.px) * w, dy = (stroke.y - stroke.py) * h;
-      const count = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (radius * .32)));
+      const travel=Math.hypot(dx,dy);
+      if (travel<.00001) return;
+      const ux=dx/travel,uy=dy/travel,tail=stroke.tailLength??1;
+      const extra=radius*(tail-1);
+      const count = Math.max(1, Math.ceil(travel / (radius * .32)));
       const forceX = clamp((stroke.x - stroke.px) * 50 / count, -2.5, 2.5) * (stroke.strength ?? 1);
       const forceY = clamp((stroke.y - stroke.py) * 50 / count, -2.5, 2.5) * (stroke.strength ?? 1);
       for (let step = 1; step <= count; step++) {
         const cx = stroke.px * w + dx * step / count;
         const cy = stroke.py * h + dy * step / count;
-        const x0 = Math.max(1, Math.floor(cx - radius)), x1 = Math.min(w - 2, Math.ceil(cx + radius));
-        const y0 = Math.max(1, Math.floor(cy - radius)), y1 = Math.min(h - 2, Math.ceil(cy + radius));
+        const x0 = Math.max(1, Math.floor(cx-radius-Math.max(ux,0)*extra));
+        const x1 = Math.min(w-2,Math.ceil(cx+radius+Math.max(-ux,0)*extra));
+        const y0 = Math.max(1, Math.floor(cy-radius-Math.max(uy,0)*extra));
+        const y1 = Math.min(h-2,Math.ceil(cy+radius+Math.max(-uy,0)*extra));
         for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
-          const distance = Math.hypot(i - cx, j - cy) / radius;
-          if (distance >= 1) continue;
-          const weight = (1 - distance) ** 2, k = i + j * w;
+          const along=(i-cx)*ux+(j-cy)*uy,across=(j-cy)*ux-(i-cx)*uy;
+          let weight;
+          if (tail>1 && along<0) {
+            // Extend behind the current direction with a narrowing wake. It is
+            // injected into the same solver, so the sharp tip bends with flow.
+            const taper=1+along/(radius*tail);
+            if (taper<=0) continue;
+            const halfWidth=radius*Math.pow(taper,1.22);
+            if (Math.abs(across)>=halfWidth) continue;
+            weight=(1-Math.abs(across)/halfWidth)**2*(.48+.52*taper);
+          } else {
+            const distance=Math.hypot(i-cx,j-cy)/radius;
+            if (distance>=1) continue;
+            weight=(1-distance)**2;
+          }
+          const k=i+j*w;
           x[k] += forceX * weight; y[k] += forceY * weight;
         }
       }
@@ -267,11 +286,13 @@
       cycle={start:performance.now(),lanes:Array.from({length:count},(_,i)=>({
         y:count===1?.48+Math.random()*.08:.39+i*.26+(Math.random()-.5)*.025,
         bend:.028+Math.random()*.022,warp:(Math.random()-.5)*.035,
-        phase:(Math.random()-.5)*.12,radiusScale:count===1?.92:.55,point:null
+        phase:(Math.random()-.5)*.12,radiusScale:count===1?.92:.55,
+        direction:i===1?-1:1,point:null
       }))};driver='ambient';previous=0;handoff=null;pointerBlend=1;
       field.clear();pending=[];lastPoint=null;
       renderer.surface.dataset.cycle=String(++cycles);
       renderer.surface.dataset.ribbons=String(count);
+      renderer.surface.dataset.origins=count===2?'left,right':'left';
       frame=requestAnimationFrame(tick);
     },IDLE_GAP);
   }
@@ -280,7 +301,7 @@
     // chosen once per pass and share the pointer's continuously advected field.
     progress=clamp(progress+lane.phase*Math.sin(progress*Math.PI));
     const angle=progress*Math.PI*2;
-    const x=.5-.36*Math.cos(angle),y=lane.y+lane.bend*Math.sin(angle)+lane.warp*Math.sin(angle*2);
+    const x=.5-lane.direction*.36*Math.cos(angle),y=lane.y+lane.bend*Math.sin(angle)+lane.warp*Math.sin(angle*2);
     const p=portrait.getBoundingClientRect(),s=scene.getBoundingClientRect();
     return {x:(p.left-s.left+x*p.width)/s.width,y:(p.top-s.top+y*p.height)/s.height};
   }
@@ -290,10 +311,11 @@
     const strokes=[];
     for (const lane of cycle.lanes) {
       const point=idlePoint(progress,lane);
-      if (lane.point && strength>0) strokes.push({px:lane.point.x,py:lane.point.y,...point,radiusScale:lane.radiusScale,strength});
+      if (lane.point && strength>0) strokes.push({px:lane.point.x,py:lane.point.y,...point,radiusScale:lane.radiusScale,tailLength:2.65,strength});
       lane.point=point;
     }
     renderer.surface.dataset.sweep=progress<.5?'right':'left';
+    renderer.surface.dataset.progress=progress.toFixed(2);
     if (progress>=1) cycle=null;
     return {strokes,progress};
   }
