@@ -286,7 +286,7 @@
       cycle={start:performance.now(),lanes:Array.from({length:count},(_,i)=>({
         y:count===1?.48+Math.random()*.08:.39+i*.26+(Math.random()-.5)*.025,
         bend:.028+Math.random()*.022,warp:(Math.random()-.5)*.035,
-        phase:(Math.random()-.5)*.12,radiusScale:count===1?.92:.55,
+        phase:(Math.random()-.5)*.12,radiusScale:count===1?1.15:.70,
         direction:i===1?-1:1,point:null
       }))};driver='ambient';previous=0;handoff=null;pointerBlend=1;
       field.clear();pending=[];lastPoint=null;
