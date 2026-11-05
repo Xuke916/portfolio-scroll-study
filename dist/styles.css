@@ -57,6 +57,7 @@
 .hero-photo-mode .hero-sculpture,.hero-photo-mode .orbit,.hero-photo-mode .floating-shell,.hero-photo-mode .portrait-label{display:none}
 .hero-photo-mode .hero-image{object-fit:fill;object-position:center;filter:none}
 .hero-fluid-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
+.hero-helmet-ink{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
 .hero-fluid-air{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
 .hero-photo-mode .hero-portrait{z-index:2}
 .hero-photo-mode .hero-coordinate,.hero-photo-mode .corner-card,.hero-photo-mode .scroll-prompt{z-index:3}
