@@ -186,7 +186,7 @@
     const galleryEnter=smooth(range(t,4.3,5.2));
     const splitEnter=smooth(range(t,8.35,9.9));
     if(t<5.3){
-    const heroScale = mix(mix(photoHero ? 1.06 : 1.18, photoHero ? .88 : .95, heroP), mobile ? .55 : .64, thumb);
+    const heroScale = mix(mix(photoHero ? .91 : 1.18, photoHero ? .80 : .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
     const cardHeight = mobile ? unit*.38 : Math.min(unit*.46,innerWidth*.36/1.63);
     const insetY = (1-cardHeight/unit)*50*thumb;
