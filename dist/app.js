@@ -19,7 +19,7 @@
   const header = $('.site-header'), progress = $('.scroll-progress>span');
   const menu = $('.site-menu'), toggle = $('.menu-toggle');
   const cursor = $('.custom-cursor'), dialog = $('.image-dialog');
-  let unit = innerHeight, current = scrollY, target = scrollY, frame = 0, lastTime = 0;
+  let unit = innerHeight, portraitHeight = 0, current = scrollY, target = scrollY, frame = 0, lastTime = 0;
   let menuOpen = false, activeChapter = -1, cursorActive = false;
   let mouseX = 0, mouseY = 0, aimX = 0, aimY = 0;
   const TOTAL_HEIGHT = 8.2;
@@ -188,10 +188,22 @@
     if(t<5.3){
     const heroScale = mix(mix(1.18, .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
-    portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*(photoHero?1.5:5)}deg) rotateY(${px*(photoHero?3:10)}deg) scale(${heroScale})`;
     const cardHeight = mobile ? unit*.38 : Math.min(unit*.46,innerWidth*.36/1.63);
     const insetY = (1-cardHeight/unit)*50*thumb;
     const insetX = (mobile ? 7 : 32)*thumb;
+    if (photoHero) {
+      const frameBottom = unit * (1 - insetY / 100);
+      // Preserve the established framing, but never expose the PNG's cut edge
+      // above the frame. A bottom origin keeps that edge level during parallax.
+      const nominalBottom = unit * (mobile ? .92 : .94) + heroY * portraitHeight / 100
+        + (heroScale - 1) * portraitHeight * .43 + py * 15;
+      const coveredBottom = frameBottom + 2;
+      const distance = nominalBottom - coveredBottom;
+      const portraitBottom = (nominalBottom + coveredBottom + Math.hypot(distance, 4)) / 2;
+      portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),${portraitBottom-unit}px,0) perspective(1300px) rotateY(${px*3}deg) scale(${heroScale})`;
+    } else {
+      portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*5}deg) rotateY(${px*10}deg) scale(${heroScale})`;
+    }
     hero.style.clipPath = `inset(${insetY}% ${insetX}%)`;
     hero.style.opacity = 1-messageOut;
     hero.style.setProperty('--thumb-tone',thumb*(photoHero ? .60 : .88));
@@ -313,7 +325,7 @@
     if(Math.abs(actual-lastWrittenScroll)<1)return;
     navigation=null;current=target=lastWrittenScroll=actual;requestTick();
   },{passive:true});
-  addEventListener('resize',()=>{if(homeSuspended)return;unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;navigation=null;target=current=lastWrittenScroll=scrollY;requestTick();},{passive:true});
+  addEventListener('resize',()=>{if(homeSuspended)return;unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;portraitHeight=portrait.offsetHeight;navigation=null;target=current=lastWrittenScroll=scrollY;requestTick();},{passive:true});
   addEventListener('touchstart',()=>{navigation=null;target=current;},{passive:true});
   reduced.addEventListener('change',()=>{if(reduced.matches){navigation=null;aimX=aimY=0;}requestTick();});
   document.addEventListener('pointermove',e=>{
@@ -345,6 +357,7 @@
     requestTick();
   },{passive:false});
   unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;
+  portraitHeight=portrait.offsetHeight;
   const initial=location.hash.slice(1);
   if(initial in CHAPTERS)writeScroll(CHAPTERS[initial]*unit/TIMELINE_SCALE);
   current=target=scrollY;render(current);
@@ -362,6 +375,7 @@
     resume(chapter = 'explore', savedScroll) {
       homeSuspended = false;
       unit = $('.scroll-space').offsetHeight / TOTAL_HEIGHT;
+      portraitHeight = portrait.offsetHeight;
       current = target = savedScroll ?? (CHAPTERS[chapter] ?? CHAPTERS.explore) * unit / TIMELINE_SCALE;
       activeChapter = -1; lastTime = 0; writeScroll(current); render(current);
     },

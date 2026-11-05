@@ -53,7 +53,7 @@
 
 /* Bright blue text uses a lighter shade for small type on the dark blue panels. */
 .gallery-counter>span,.menu-content nav>a span{color:var(--accent-soft)}
-.hero-photo-mode .hero-portrait{width:144svh;height:108svh;bottom:6svh;transform-origin:50% 57%}
+.hero-photo-mode .hero-portrait{width:144svh;height:108svh;bottom:0;transform-origin:50% 100%}
 .hero-photo-mode .hero-sculpture,.hero-photo-mode .orbit,.hero-photo-mode .floating-shell,.hero-photo-mode .portrait-label{display:none}
 .hero-photo-mode .hero-image{object-fit:fill;object-position:center;filter:none}
 .hero-fluid-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
@@ -61,4 +61,4 @@
 .hero-photo-mode .hero-portrait{z-index:2}
 .hero-photo-mode .hero-coordinate,.hero-photo-mode .corner-card,.hero-photo-mode .scroll-prompt{z-index:3}
 .hero-portrait.fluid-ready .hero-image{opacity:0}
-@media(max-width:600px){.hero-photo-mode .hero-portrait{width:120svh;height:90svh;bottom:8svh;left:55%;transform-origin:50% 57%}}
+@media(max-width:600px){.hero-photo-mode .hero-portrait{width:120svh;height:90svh;bottom:0;left:55%;transform-origin:50% 100%}}
