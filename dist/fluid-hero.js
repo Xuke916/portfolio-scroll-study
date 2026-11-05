@@ -24,6 +24,7 @@
   const IDLE_GAP = 2000, SWEEP_DURATION = 2300, HANDOFF_DURATION = 220;
   let idleTimer = 0, cycle = null, cycles = 0, driver = 'none', currentFade = 0;
   let handoff = null, pointerBlend = 1;
+  let helmetPhase = 0;
 
   // Both the helmet reveal and blank-space shapes sample one screen-space
   // velocity field. The idle pass feeds a curved stroke into that same solver;
@@ -151,6 +152,9 @@
   const portraitShader = fieldShader + `
     uniform sampler2D uPerson;
     uniform sampler2D uHelmet;
+    uniform sampler2D uModel;
+    uniform sampler2D uModelWire;
+    uniform float uUseModel;
     uniform float uShell;
     vec4 clean(sampler2D tex, vec2 uv){
       vec4 c = texture2D(tex, clamp(uv, .001, .999));
@@ -169,6 +173,17 @@
       vec2 velocity = (flow.rg * 255. - 128.) / 24.;
       vec2 refraction = velocity * .002 * mask;
       vec4 person = clean(uPerson, uv);
+      if(uUseModel>.5){
+        vec4 model=texture2D(uModel,vUv);
+        vec4 wireModel=texture2D(uModelWire,vUv);
+        float modelAlpha=model.a*mask;
+        vec3 modelColor=model.rgb*mask+person.rgb*person.a*(1.-modelAlpha);
+        float modelOpacity=modelAlpha+person.a*(1.-modelAlpha);
+        float wireGain=(1.-mask)*uShell;
+        modelColor=wireModel.rgb*wireGain+modelColor*(1.-wireModel.a*wireGain);
+        modelOpacity=wireModel.a*wireGain+modelOpacity*(1.-wireModel.a*wireGain);
+        gl_FragColor=vec4(modelColor/max(modelOpacity,.0001),modelOpacity);return;
+      }
       vec4 helmet = clean(uHelmet, uv - refraction);
       vec3 rgb = mix(person.rgb * person.a, helmet.rgb * helmet.a, mask);
       float alpha = mix(person.a, helmet.a, mask);
@@ -222,10 +237,23 @@
       }
       if (photo) images.forEach((img,i) => texture(i,i?'uHelmet':'uPerson',img));
       const flow = texture(2,'uField');
+      let helmet=null;
+      if(photo&&window.HelmetOrbit){
+        try{helmet=window.HelmetOrbit.createRenderer(gl);}catch(error){console.warn('Helmet model unavailable:',error.message);}
+      }
       let flowWidth=0,flowHeight=0;
-      const uniforms = Object.fromEntries(['Rect','Fade','Shell'].map(n => [n,gl.getUniformLocation(program,'u'+n)]));
+      const uniforms = Object.fromEntries(['Rect','Fade','Shell','UseModel','Model','ModelWire'].map(n => [n,gl.getUniformLocation(program,'u'+n)]));
       surface.dataset.renderer = 'webgl';
+      if(photo)surface.dataset.helmet=helmet?'3d':'photo';
       return {surface, draw(state){
+        if(helmet){
+          helmet.render(surface.width,surface.height,state.helmetPhase);
+          gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,helmet.color);
+          gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,helmet.wire);
+          surface.dataset.helmetAngle=(state.helmetPhase*180/Math.PI%360).toFixed(1);
+        }
+        gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+        gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
         gl.viewport(0,0,surface.width,surface.height);
         gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,flow);
         if (flowWidth!==field.w || flowHeight!==field.h) {
@@ -234,6 +262,8 @@
         } else gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,field.w,field.h,gl.RGBA,gl.UNSIGNED_BYTE,field.pixels);
         gl.uniform4f(uniforms.Rect,...state.rect);
         gl.uniform1f(uniforms.Fade,state.fade); gl.uniform1f(uniforms.Shell,1-thumbnail);
+        gl.uniform1f(uniforms.UseModel,helmet?1:0);
+        gl.uniform1i(uniforms.Model,3);gl.uniform1i(uniforms.ModelWire,4);
         gl.drawArrays(gl.TRIANGLES,0,6);
       }};
     } catch (error) { console.warn('Fluid compositor fallback:',error.message); return null; }
@@ -333,7 +363,7 @@
     if (!ready) return;
     currentFade=fade;
     const p = portrait.getBoundingClientRect(), s = scene.getBoundingClientRect();
-    const state = {fade:fade * (1-thumbnail)**2,
+    const state = {fade:fade * (1-thumbnail)**2,helmetPhase,
       rect:[(p.left-s.left)/s.width,(p.top-s.top)/s.height,p.width/s.width,p.height/s.height]};
     renderer.draw(state); airRenderer?.draw(state);
     const surface = renderer.surface;
@@ -354,6 +384,7 @@
     frame=0;
     if (!interactive()) return;
     const dt=previous ? clamp(now-previous,4,33.334) : 16.667;previous=now;
+    helmetPhase+=dt*.00062;
     pointerBlend=handoff?smooth((now-handoff.start)/HANDOFF_DURATION):1;
     const ambient=idleStrokes(now,handoff?1-pointerBlend:1);
     if (handoff) {
