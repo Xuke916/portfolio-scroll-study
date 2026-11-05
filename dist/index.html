@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f3f3eb">
   <meta name="description" content="A scroll-driven portfolio study. Content and image placeholders are ready to replace.">
   <title>XU KE / Portfolio</title>
@@ -11,13 +11,15 @@
   <link rel="preload" href="assets/hero-helmet.png" as="image">
   <link rel="stylesheet" href="styles.css?v=hero-bottom-anchor-v1">
   <link rel="stylesheet" href="pages.css?v=project-pages-footer-v1">
+  <link rel="stylesheet" href="responsive.css?v=responsive-v1">
   <script src="content.js?v=xu-ke-idle-v1" defer></script>
-  <script src="app.js?v=hero-size-v3" defer></script>
+  <script src="app.js?v=responsive-v1" defer></script>
   <script src="helmet-ink.js?v=photo-helmet-ink-v1" defer></script>
-  <script src="fluid-hero.js?v=photo-helmet-ink-v1" defer></script>
-  <script src="pages.js?v=xu-ke-title-v1" defer></script>
+  <script src="fluid-hero.js?v=responsive-v1" defer></script>
+  <script src="pages.js?v=responsive-v1" defer></script>
 </head>
 <body>
+  <div id="viewport-metric" aria-hidden="true"></div>
   <a class="skip-link" href="#chapter-navigation">跳转至章节导航</a>
   <svg class="svg-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
@@ -71,7 +73,7 @@
         <div class="floating-shell shell-left"><span>02</span><i></i></div><div class="floating-shell shell-right"><span>03</span><i></i></div>
         <div class="hero-bottom-copy"><div class="placeholder-line"></div><div class="placeholder-line short"></div><span class="mono">TEXT PLACEHOLDER</span></div>
         <div class="corner-card"><span class="mono">PORTFOLIO / 2026</span><svg viewBox="0 0 70 40"><path d="M8 29 22 11h26l14 18H8Zm14-18 13 18 13-18M8 29l27 8 27-8M35 2v9"/></svg><span class="corner-divider"></span><strong>01 — 03</strong><span class="mono">SCROLL ↓</span></div>
-        <button class="scroll-prompt mono" data-go="message"><span>MOVE YOUR MOUSE · SCROLL TO EXPLORE</span><i>↓</i></button>
+        <button class="scroll-prompt mono" data-go="message"><span><span class="hint-pointer">MOVE YOUR MOUSE · SCROLL TO EXPLORE</span><span class="hint-touch">向上滑动 · 开始探索</span></span><i>↓</i></button>
       </section>
       <div class="message-signature" aria-hidden="true"><svg viewBox="0 0 1000 700" preserveAspectRatio="none"><path pathLength="1" d="M130 550C-60 620 220 370 540 232S1080 70 855 310 660 480 706 330L480 597 561 379 387 651 735 45"/></svg></div>
 
@@ -111,7 +113,7 @@
   <div class="scroll-progress" aria-hidden="true"><span></span></div>
   <div class="custom-cursor" aria-hidden="true"><span>EXPLORE ↗</span></div>
 
-  <div class="site-menu" id="site-menu" inert><div class="menu-content"><span class="mono">PORTFOLIO / CONTENT PLACEHOLDERS</span><nav aria-label="主导航"><a href="#intro" data-menu-home><span>01</span>HOME<i>↗</i></a><a href="#work" data-open-page="work"><span>02</span>专业作品<i>↗</i></a><a href="#life" data-open-page="life"><span>03</span>日常生活<i>↗</i></a></nav><span class="mono menu-note">MOVE YOUR MOUSE. SCROLL TO EXPLORE.</span></div></div>
+  <div class="site-menu" id="site-menu" inert><div class="menu-content"><span class="mono">PORTFOLIO / CONTENT PLACEHOLDERS</span><nav aria-label="主导航"><a href="#intro" data-menu-home><span>01</span>HOME<i>↗</i></a><a href="#work" data-open-page="work"><span>02</span>专业作品<i>↗</i></a><a href="#life" data-open-page="life"><span>03</span>日常生活<i>↗</i></a></nav><span class="mono menu-note"><span class="hint-pointer">MOVE YOUR MOUSE. SCROLL TO EXPLORE.</span><span class="hint-touch">向上滑动，继续探索。</span></span></div></div>
 
   <dialog class="image-dialog"><button class="dialog-close" aria-label="关闭预览">×</button><div class="dialog-image"></div><div class="dialog-footer"><span class="mono dialog-label">IMAGE PLACEHOLDER</span><span class="mono">ESC TO CLOSE</span></div></dialog>
   <div class="live-status" aria-live="polite"></div>

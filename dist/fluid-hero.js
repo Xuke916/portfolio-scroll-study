@@ -21,6 +21,7 @@
   let frame = 0, previous = 0, lastInput = -Infinity, lastPoint = null, draws = 0;
   let thumbnail = clamp(Number(scene.style.getPropertyValue('--thumb-progress')) || 0);
   let pending = [], field, width = 1, height = 1;
+  let surfaceSize = '';
   const IDLE_GAP = 2000, SWEEP_DURATION = 2300, HANDOFF_DURATION = 220;
   let idleTimer = 0, cycle = null, cycles = 0, driver = 'none', currentFade = 0;
   let handoff = null, pointerBlend = 1;
@@ -392,7 +393,11 @@
     ink?.setActive(interactive());
   }
   function resize() {
-    width=scene.clientWidth||innerWidth;height=scene.clientHeight||innerHeight;
+    const nextWidth=scene.clientWidth||innerWidth,nextHeight=scene.clientHeight||innerHeight;
+    const key=[nextWidth,nextHeight,portrait.clientWidth,portrait.clientHeight,devicePixelRatio,ready].join(':');
+    if(key===surfaceSize)return;
+    surfaceSize=key;
+    width=nextWidth;height=nextHeight;
     const long=Math.min(mobile.matches?132:192,Math.max(96,Math.round(Math.max(width,height)*.1)));
     field=new FlowField(Math.max(24,Math.round(long*width/Math.max(width,height))),Math.max(24,Math.round(long*height/Math.max(width,height))));
     if (!ready) return;

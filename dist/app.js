@@ -11,6 +11,7 @@
   document.body.classList.toggle('hero-photo-mode', photoHero);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = matchMedia('(pointer: fine)');
+  window.PortfolioViewport = () => $('#viewport-metric')?.offsetHeight || innerHeight;
   const stage = $('.stage'), hero = $('.hero-scene'), portrait = $('.hero-portrait');
   const message = $('.message-scene'), gallery = $('.gallery-scene'), split = $('.split-scene');
   const world = $('.gallery-world'), quote = $('.gallery-quote');
@@ -188,9 +189,10 @@
     if(t<5.3){
     const heroScale = mix(mix(photoHero ? .91 : 1.18, photoHero ? .80 : .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
-    const cardHeight = mobile ? unit*.38 : Math.min(unit*.46,innerWidth*.36/1.63);
+    const thumbWidth = mobile ? .86 : innerWidth < 1100 ? .62 : .36;
+    const cardHeight = Math.min(unit * (mobile ? .42 : .46), innerWidth * thumbWidth / (mobile ? 1.25 : 1.63));
     const insetY = (1-cardHeight/unit)*50*thumb;
-    const insetX = (mobile ? 7 : 32)*thumb;
+    const insetX = (1-thumbWidth)*50*thumb;
     if (photoHero) {
       const frameBottom = unit * (1 - insetY / 100);
       // Preserve the established framing, but never expose the PNG's cut edge
@@ -325,7 +327,15 @@
     if(Math.abs(actual-lastWrittenScroll)<1)return;
     navigation=null;current=target=lastWrittenScroll=actual;requestTick();
   },{passive:true});
-  addEventListener('resize',()=>{if(homeSuspended)return;unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;portraitHeight=portrait.offsetHeight;navigation=null;target=current=lastWrittenScroll=scrollY;requestTick();},{passive:true});
+  addEventListener('resize',()=>{
+    if(homeSuspended)return;
+    const previousUnit=unit;
+    unit=$('.scroll-space').offsetHeight/TOTAL_HEIGHT;
+    portraitHeight=portrait.offsetHeight;
+    // Keep the same story frame across rotation and browser toolbar changes.
+    current=current/previousUnit*unit;target=current;navigation=null;
+    writeScroll(current);requestTick();
+  },{passive:true});
   addEventListener('touchstart',()=>{navigation=null;target=current;},{passive:true});
   reduced.addEventListener('change',()=>{if(reduced.matches){navigation=null;aimX=aimY=0;}requestTick();});
   document.addEventListener('pointermove',e=>{

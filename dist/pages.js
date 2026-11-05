@@ -15,6 +15,7 @@
   let mouseX = 0, mouseY = 0, aimX = 0, aimY = 0;
   let ui = null, metrics = null, data = null, savedHome = null, queuedPop = null;
   const savedPositions = new Map();
+  let touchGesture = null, suppressCoverClickUntil = 0;
 
   function projectRoute(project) { return 'work/' + project.slug; }
   function projectInfo(key) {
@@ -109,7 +110,7 @@
         </div></section>` : ''}
         <section class="detail-section detail-horizontal" data-detail-section="projects"><div class="detail-sticky project-viewport" tabindex="0" aria-label="${esc(data.projectsTitle)}，向下滚动以横向浏览">
           <header class="projects-heading"><span class="mono">${String(sections.length).padStart(2,'0')} / ${name === 'work' ? 'PERSONAL PROJECTS' : 'EVERYDAY MOMENTS'}</span><h2>${esc(data.projectsTitle)}</h2></header>
-          <span class="projects-wheel-hint mono">向下滚动 · 横向浏览 <i>→</i></span>
+          <span class="projects-wheel-hint mono"><span class="projects-pointer-hint">向下滚动 · 横向浏览</span><span class="projects-touch-hint">上滑浏览 · 也可左右轻扫</span> <i>→</i></span>
           <div class="project-track">${projects.map((project,i)=>`<section class="project-panel" aria-label="${esc(project.title)}"><div class="project-panel-title"><span class="mono">${String(i+1).padStart(2,'0')} / ${String(projects.length).padStart(2,'0')}</span><h3>${esc(project.title)}</h3>${coverOnly?'':`<span class="mono">${esc(project.category)}</span>`}</div>${coverLink(project,i,coverOnly,name)}${coverOnly?'':`<button class="project-art project-art-top" data-project-index="${i}" aria-label="查看${esc(project.title)}细节">${media(project.detailImage,'DETAIL / '+String(i+1).padStart(2,'0'))}</button><div class="project-art project-art-small" aria-hidden="true">${media('', 'VISUAL / '+String(i+1).padStart(2,'0'))}</div><span class="project-panel-foot mono">${esc(project.category)}</span>`}</section>`).join('')}</div>
           <div class="projects-controls"><span class="mono"><b class="project-current">01</b> / ${String(projects.length).padStart(2,'0')}</span><div class="project-dots">${projects.map((p,i)=>`<button data-project-position="${i}" aria-label="前往${esc(p.title)}" class="${i===0?'active':''}"></button>`).join('')}</div><span class="projects-mini-progress"><i></i></span></div>
         </div></section>
@@ -130,7 +131,7 @@
   }
   function measure() {
     if(!ui)return;
-    const h=innerHeight,w=innerWidth,mobile=w<=600;
+    const h=window.PortfolioViewport(),w=innerWidth,mobile=w<=600;
     if(ui.kind==='project'){
       let offset=0;metrics={h,w,mobile,travel:0,sections:{}};
       for(const el of ui.sections){const length=el.offsetHeight||h;metrics.sections[el.dataset.detailSection]={start:offset,length};offset+=length;}
@@ -139,7 +140,11 @@
     const panelWidth=w*(mobile?1:.85),travel=Math.max(0,panelWidth*ui.panels.length-w);
     const spans={hero:h*1.45,story:h*1.85,collage:h*1.4,projects:h+travel/1.35,footer:h*1.05};
     let offset=0;metrics={h,w,mobile,panelWidth,travel,sections:{}};
-    for(const el of ui.sections){const name=el.dataset.detailSection;metrics.sections[name]={start:offset,length:spans[name]};el.style.height=spans[name]+'px';offset+=spans[name];}
+    for(const el of ui.sections){
+      const name=el.dataset.detailSection;
+      const length=name==='footer'?Math.max(spans[name],parseFloat(getComputedStyle(el).minHeight)||0):spans[name];
+      metrics.sections[name]={start:offset,length};el.style.height=length+'px';offset+=length;
+    }
     metrics.max=Math.max(0,offset-h);
     root.style.setProperty('--project-panel-width',panelWidth+'px');
     ui.article.dataset.scrollHeight=String(offset);
@@ -260,6 +265,7 @@
     home(chapter='explore',{immediate=false}={}){transitionTo('home',{chapter,immediate});}
   };
   document.addEventListener('click',e=>{
+    if(performance.now()<suppressCoverClickUntil&&e.target.closest?.('.project-art')){e.preventDefault();return;}
     if(e.target.closest?.('[data-footer-home]')){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();window.PortfolioPages.home('intro',{immediate:true});return;}
     const projectPage=e.target.closest?.('[data-project-route]');
     if(projectPage){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();transitionTo(projectPage.dataset.projectRoute);return;}
@@ -287,8 +293,56 @@
     if(route==='home'||busy||Math.abs(scrollY-written)<1)return;
     jump=null;position=target=written=clamp(scrollY,0,metrics.max);request();
   },{passive:true});
-  addEventListener('resize',()=>{if(route==='home')return;const ratio=metrics.max?position/metrics.max:0;measure();position=target=ratio*metrics.max;jump=null;write(position);render(position);});
-  addEventListener('touchstart',()=>{if(route!=='home'){jump=null;target=position;}},{passive:true});
+  addEventListener('resize',()=>{
+    if(route==='home'||!metrics)return;
+    const old=metrics, entries=Object.entries(old.sections);
+    const [name,section]=entries.find(([,s])=>position>=s.start&&position<s.start+s.length)||entries.at(-1);
+    const projectOffset=name==='projects'&&position<=section.start+section.length-old.h+1?(position-section.start)*1.35/old.panelWidth:null;
+    const local=(position-section.start)/section.length;
+    measure();
+    if(old.w===metrics.w&&old.h===metrics.h)return;
+    // Preserve the current project instead of jumping to a different chapter.
+    const next=metrics.sections[name];
+    position=target=clamp(projectOffset!==null?next.start+Math.min(projectOffset*metrics.panelWidth,metrics.travel)/1.35:next.start+local*next.length,0,metrics.max);
+    jump=null;touchGesture=null;write(position);render(position);
+  });
+  addEventListener('touchstart',e=>{
+    touchGesture=null;
+    if(route==='home'||busy||menuPaused||dialog.open||e.touches.length!==1)return;
+    jump=null;target=position;
+    const projects=metrics.sections.projects;
+    if(!projects||!e.target.closest?.('.project-viewport')||position<projects.start-1||position>projects.start+projects.length-metrics.h+1)return;
+    const p=e.touches[0];
+    touchGesture={x:p.clientX,y:p.clientY,scroll:position,lastX:p.clientX,lastTime:performance.now(),velocity:0,horizontal:false};
+  },{passive:true});
+  addEventListener('touchmove',e=>{
+    if(!touchGesture)return;
+    if(e.touches.length!==1){touchGesture=null;return;}
+    const p=e.touches[0],g=touchGesture,dx=p.clientX-g.x,dy=p.clientY-g.y;
+    if(!g.horizontal){
+      if(Math.max(Math.abs(dx),Math.abs(dy))<10)return;
+      if(Math.abs(dx)<=Math.abs(dy)*1.15){touchGesture=null;return;}
+      g.horizontal=true;
+    }
+    if(!e.cancelable){touchGesture=null;return;}
+    e.preventDefault();
+    const now=performance.now(),dt=now-g.lastTime;
+    if(dt>0)g.velocity=mix(g.velocity,(p.clientX-g.lastX)/dt,.65);
+    g.lastX=p.clientX;g.lastTime=now;
+    const projects=metrics.sections.projects;
+    target=clamp(g.scroll-dx/1.35,projects.start,projects.start+metrics.travel/1.35);
+    suppressCoverClickUntil=now+350;request();
+  },{passive:false});
+  addEventListener('touchend',()=>{
+    if(touchGesture?.horizontal){
+      const g=touchGesture,projects=metrics.sections.projects;
+      const momentum=performance.now()-g.lastTime<100?clamp(-g.velocity*120,-metrics.w*.5,metrics.w*.5)/1.35:0;
+      target=clamp(target+momentum,projects.start,projects.start+metrics.travel/1.35);
+      suppressCoverClickUntil=performance.now()+350;request();
+    }
+    touchGesture=null;
+  },{passive:true});
+  addEventListener('touchcancel',()=>{touchGesture=null;},{passive:true});
   document.addEventListener('pointermove',e=>{if(route==='home'||busy||menuPaused||reduced.matches||e.pointerType==='touch')return;aimX=clamp(e.clientX/innerWidth*2-1,-1,1);aimY=clamp(e.clientY/innerHeight*2-1,-1,1);request();},{passive:true});
   document.addEventListener('pointerleave',()=>{aimX=aimY=0;request();});
   document.addEventListener('portfolio:menu',e=>{menuPaused=e.detail.open;if(menuPaused){stop();if(route!=='home')document.documentElement.style.setProperty('--header-color','#f3f3eb');}else request();});
