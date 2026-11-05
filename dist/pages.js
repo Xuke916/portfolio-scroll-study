@@ -184,14 +184,9 @@
     if(queuedPop){const next=queuedPop;queuedPop=null;transitionTo(next.to,{...next,push:false});}
   }
   window.PortfolioPages={
-    open(name){if(name!=='work'&&name!=='life')return;if(route===name&&!busy){scrollToPosition(0);return;}transitionTo(name);},
-    home(chapter='explore'){transitionTo('home',{chapter});}
+    open(name){if(name!=='work'&&name!=='life')return;window.PortfolioHome.closeMenu();if(route===name&&!busy){scrollToPosition(0);return;}transitionTo(name);},
+    home(chapter='explore',{immediate=false}={}){transitionTo('home',{chapter,immediate});}
   };
-  const menuNav=$('.menu-content nav');
-  for(const [name,label,num] of [['work','专业作品','05'],['life','日常生活','06']]){
-    const a=document.createElement('a');a.href='#'+name;a.dataset.openPage=name;
-    a.innerHTML=`<span>${num}</span>${label}<i>↗</i>`;menuNav.append(a);
-  }
   document.addEventListener('click',e=>{
     const open=e.target.closest?.('[data-open-page]');
     if(open){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();window.PortfolioPages.open(open.dataset.openPage);return;}

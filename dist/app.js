@@ -146,14 +146,14 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
-  function go(chapter, { duration, focusDestination = false } = {}) {
+  function go(chapter, { duration, focusDestination = false, immediate = false } = {}) {
     if (!(chapter in CHAPTERS)) return;
     if (menuOpen) setMenu(false);
-    if (homeSuspended) { window.PortfolioPages?.home(chapter); return; }
+    if (homeSuspended) { window.PortfolioPages?.home(chapter, { immediate }); return; }
     target = CHAPTERS[chapter] * unit / TIMELINE_SCALE;
     const onComplete = focusDestination && chapter === 'explore'
       ? () => $('.split-option', ui.splitOptions).focus({ preventScroll: true }) : null;
-    if (reduced.matches) {
+    if (reduced.matches || immediate) {
       current = target; navigation = null; writeScroll(current); render(current); onComplete?.();
     } else navigation = {
       from: current, to: target, started: null,
@@ -171,7 +171,7 @@
       if (fromGallery) {
         aimX = aimY = 0; cursorActive = false; cursor.classList.remove('visible');
       }
-      go(id, fromGallery ? { duration: 850, focusDestination: true } : {});
+      go(id, fromGallery ? { duration: 850, focusDestination: true } : { immediate: a.hasAttribute('data-menu-home') });
     }
   }));
   $$('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
@@ -186,7 +186,7 @@
     const galleryEnter=smooth(range(t,4.3,5.2));
     const splitEnter=smooth(range(t,8.35,9.9));
     if(t<5.3){
-    const heroScale = mix(mix(1.18, .95, heroP), mobile ? .55 : .64, thumb);
+    const heroScale = mix(mix(photoHero ? 1.06 : 1.18, photoHero ? .88 : .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
     const cardHeight = mobile ? unit*.38 : Math.min(unit*.46,innerWidth*.36/1.63);
     const insetY = (1-cardHeight/unit)*50*thumb;
