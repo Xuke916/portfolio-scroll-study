@@ -3,387 +3,355 @@
   const content = window.PORTFOLIO_CONTENT;
   const portrait = document.querySelector('.hero-portrait');
   if (!portrait || !content?.heroImage || !content.heroHelmetImage) return;
-
-  const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v));
-  const mix = (a, b, t) => a + (b - a) * t;
+  const scene = portrait.parentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width: 600px)');
+  const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+  const smooth = v => { v = clamp(v); return v * v * (3 - 2 * v); };
   const canvas = document.createElement('canvas');
-  canvas.className = 'hero-fluid-canvas';
-  canvas.setAttribute('aria-hidden', 'true');
-  portrait.append(canvas);
   const air = document.createElement('canvas');
-  air.className = 'hero-fluid-air';
-  air.setAttribute('aria-hidden', 'true');
-  portrait.parentElement.insertBefore(air, portrait);
-  const airContext = air.getContext('2d');
-  const fallback = portrait.querySelector('.hero-image');
-  fallback.alt = '戴深蓝棒球帽的背影，流动切片中显现蓝色头盔';
+  canvas.className = 'hero-fluid-canvas'; air.className = 'hero-fluid-air';
+  [canvas, air].forEach(el => el.setAttribute('aria-hidden', 'true'));
+  portrait.append(canvas); scene.insertBefore(air, portrait);
+  portrait.querySelector('.hero-image').alt = '深蓝棒球帽背影，鼠标划过时流动显现蓝色头盔';
+  portrait.querySelector('.hero-image').draggable = false;
 
-  let renderer, images, frame = 0, previous = 0, elapsed = 0;
+  let images, renderer, airRenderer, ready = false, failed = false;
   let wanted = !document.body.classList.contains('detail-mode');
-  let ready = false, failed = false, lastPointer = -10000, pointerMix = 0;
-  let pointerX = .52, pointerY = .5, targetX = .52, targetY = .5;
-  let targetEnergy = 0, energy = 0, lastEventTime = 0;
-  let centerX = .52, centerY = .5, angle = Math.PI / 2;
-  let dataTime = 0, thumbnail = clamp(parseFloat(portrait.parentElement.style.getPropertyValue('--thumb-progress')) || 0);
-  air.style.opacity = String(1 - thumbnail);
-  let airX = .5, airY = .45, airTargetX = .5, airTargetY = .45;
+  let frame = 0, previous = 0, lastInput = -Infinity, lastPoint = null, draws = 0;
+  let thumbnail = clamp(Number(scene.style.getPropertyValue('--thumb-progress')) || 0);
+  let pending = [], field, width = 1, height = 1;
 
-  // The two PNGs share one coordinate system. Only the curved reveal is displaced,
-  // so the shoulders and hair stay registered while the helmet crosses the portrait.
-  const vertex = `
-    attribute vec2 aPosition;
-    varying vec2 vUv;
-    void main() {
-      vUv = aPosition * .5 + .5;
-      gl_Position = vec4(aPosition, 0., 1.);
+  // Both the helmet reveal and blank-space shapes sample one screen-space
+  // velocity field. There is no time-driven noise or automatic cursor path.
+  class FlowField {
+    constructor(w, h) {
+      this.w = w; this.h = h; this.n = w * h;
+      for (const key of ['x', 'y', 'nextX', 'nextY', 'div', 'pressure', 'nextPressure'])
+        this[key] = new Float32Array(this.n);
+      this.pixels = new Uint8Array(this.n * 4);
+      this.clear();
     }
-  `;
-  const fragment = `
+    clear() {
+      for (const key of ['x', 'y', 'nextX', 'nextY', 'div', 'pressure', 'nextPressure']) this[key].fill(0);
+      this.pack();
+    }
+    sample(a, x, y) {
+      x = clamp(x, .5, this.w - 1.5); y = clamp(y, .5, this.h - 1.5);
+      const ix = x | 0, iy = y | 0, fx = x - ix, fy = y - iy, i = ix + iy * this.w;
+      return (a[i] * (1 - fx) + a[i + 1] * fx) * (1 - fy)
+        + (a[i + this.w] * (1 - fx) + a[i + this.w + 1] * fx) * fy;
+    }
+    inject(stroke) {
+      const {w, h, x, y} = this;
+      const radius = Math.min(18, Math.max(10, Math.min(w, h) * .22));
+      const dx = (stroke.x - stroke.px) * w, dy = (stroke.y - stroke.py) * h;
+      const count = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (radius * .32)));
+      const forceX = clamp((stroke.x - stroke.px) * 50 / count, -2.5, 2.5);
+      const forceY = clamp((stroke.y - stroke.py) * 50 / count, -2.5, 2.5);
+      for (let step = 1; step <= count; step++) {
+        const cx = stroke.px * w + dx * step / count;
+        const cy = stroke.py * h + dy * step / count;
+        const x0 = Math.max(1, Math.floor(cx - radius)), x1 = Math.min(w - 2, Math.ceil(cx + radius));
+        const y0 = Math.max(1, Math.floor(cy - radius)), y1 = Math.min(h - 2, Math.ceil(cy + radius));
+        for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
+          const distance = Math.hypot(i - cx, j - cy) / radius;
+          if (distance >= 1) continue;
+          const weight = (1 - distance) ** 2, k = i + j * w;
+          x[k] += forceX * weight; y[k] += forceY * weight;
+        }
+      }
+    }
+    step(ms, strokes) {
+      const {w, h, x, y, nextX, nextY, div} = this;
+      const dt = Math.max(w, h) * .014 * ms / 16.667;
+      const damping = Math.pow(.96, ms / 16.667);
+      // Back-and-forth error compensation preserves the thin folded edges that
+      // ordinary advection would blur away after a few frames.
+      for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+        const k = i + j * w;
+        const bx = i - x[k] * dt, by = j - y[k] * dt;
+        const fx = bx + this.sample(x, bx, by) * dt;
+        const fy = by + this.sample(y, bx, by) * dt;
+        const cx = i - (fx - i) * .5, cy = j - (fy - j) * .5;
+        const sx = cx - this.sample(x, cx, cy) * dt;
+        const sy = cy - this.sample(y, cx, cy) * dt;
+        nextX[k] = this.sample(x, sx, sy) * damping;
+        nextY[k] = this.sample(y, sx, sy) * damping;
+      }
+      x.set(nextX); y.set(nextY);
+      strokes.forEach(stroke => this.inject(stroke));
+      for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+        const k = i + j * w;
+        div[k] = .5 * (x[k + 1] - x[k - 1] + y[k + w] - y[k - w]);
+      }
+      this.pressure.fill(0); this.nextPressure.fill(0);
+      for (let iteration = 0; iteration < 4; iteration++) {
+        const p = this.pressure, q = this.nextPressure;
+        for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+          const k = i + j * w;
+          q[k] = (p[k - 1] + p[k + 1] + p[k - w] + p[k + w] - div[k]) * .25;
+        }
+        this.pressure = q; this.nextPressure = p;
+      }
+      const p = this.pressure;
+      for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+        const k = i + j * w;
+        x[k] = clamp(x[k] - .5 * (p[k + 1] - p[k - 1]), -5, 5);
+        y[k] = clamp(y[k] - .5 * (p[k + w] - p[k - w]), -5, 5);
+      }
+      this.pack();
+    }
+    pack() {
+      let peak = 0;
+      for (let i = 0; i < this.n; i++) {
+        const speed = Math.hypot(this.x[i], this.y[i]) * .5, k = i * 4;
+        this.pixels[k] = clamp(128 + this.x[i] * 24, 0, 255);
+        this.pixels[k + 1] = clamp(128 + this.y[i] * 24, 0, 255);
+        this.pixels[k + 2] = clamp(speed) * 255; this.pixels[k + 3] = 255;
+        peak = Math.max(peak, speed);
+      }
+      this.peak = peak;
+    }
+  }
+
+  const vertex = `attribute vec2 aPosition; varying vec2 vUv;
+    void main(){ vUv = aPosition * .5 + .5; gl_Position = vec4(aPosition, 0., 1.); }`;
+  const fieldShader = `
     precision highp float;
     varying vec2 vUv;
+    uniform sampler2D uField;
+    uniform float uFade;
+    uniform vec4 uRect;
+    float fluid(vec2 uv){ return smoothstep(.099, .103, texture2D(uField, uv).b) * uFade; }
+  `;
+  const portraitShader = fieldShader + `
     uniform sampler2D uPerson;
     uniform sampler2D uHelmet;
-    uniform vec2 uCenter;
-    uniform float uAngle;
-    uniform float uTime;
-    uniform float uEnergy;
-    uniform float uReveal;
-    const float aspect = 1.33333333;
-
-    vec4 sampleClean(sampler2D tex, vec2 uv) {
+    uniform float uShell;
+    vec4 clean(sampler2D tex, vec2 uv){
       vec4 c = texture2D(tex, clamp(uv, .001, .999));
-      c.a *= smoothstep(.008, .025, c.a);
-      return c;
+      c.a *= smoothstep(.008, .025, c.a); return c;
     }
-    float flowShape(vec2 p, float span, float height, float phase) {
-      // A bent, asymmetrical lens with a rounded belly and a pointed tail.
-      // Domain warping folds its edge rather than cutting a straight strip.
-      float u = p.x / span;
-      float curl = .062 * sin(u * 2.6 + phase)
-                 + .021 * sin(u * 5.4 - phase * .7);
-      float belly = sqrt(max(.0, 1. - u * u));
-      float taper = .87 - .63 * u;
-      float ripple = 1. + .1 * sin(u * 5. + phase * .6);
-      float halfHeight = height * belly * taper * ripple;
-      return max(abs(p.y - curl) - halfHeight, (abs(u) - 1.) * span);
+    float mesh(vec2 p){
+      vec2 f = fract(p * vec2(54., 42.));
+      float d = min(min(min(f.x, 1.-f.x), min(f.y, 1.-f.y)), abs(f.x-f.y)*.707);
+      return 1. - smoothstep(.008, .035, d);
     }
-    float meshLine(vec2 p) {
-      vec2 cell = fract(p * vec2(54., 42.));
-      float border = min(min(cell.x, 1. - cell.x), min(cell.y, 1. - cell.y));
-      float diagonal = abs(cell.x - cell.y) * .707;
-      return 1. - smoothstep(.008, .035, min(border, diagonal));
-    }
-    void main() {
+    void main(){
       vec2 uv = vec2(vUv.x, 1. - vUv.y);
-      vec2 normal = vec2(cos(uAngle), sin(uAngle));
-      vec2 tangent = vec2(normal.y, -normal.x);
-      vec2 point = (uv - uCenter) * vec2(aspect, 1.);
-      float along = dot(point, tangent);
-      float across = dot(point, normal);
-      vec2 flow = vec2(along, across);
-      flow.x += .012 * sin(across * 18. + uTime * .47);
-      flow.y += .008 * sin(along * 21. - uTime * .63);
-      float span = .26 + .025 * sin(uTime * .34);
-      float height = .102 + .025 * sin(uTime * .51) + uEnergy * .022;
-      float distance = flowShape(flow, span, height, uTime * .46);
-      float slice = (1. - smoothstep(-.0015, .0025, distance)) * uReveal;
-      float edge = 1. - smoothstep(.001, .015, abs(distance));
-      vec2 bend = normal / vec2(aspect, 1.) * edge
-                * (.0035 + .008 * uEnergy) * sin(along * 14. + uTime) * uReveal;
-      vec4 person = sampleClean(uPerson, uv - bend * .35);
-      vec4 helmet = sampleClean(uHelmet, uv + bend);
-      vec3 color = mix(person.rgb * person.a, helmet.rgb * helmet.a, slice);
-      float alpha = mix(person.a, helmet.a, slice);
-
-      float ribbon = 1. - smoothstep(-.002, .003,
-        flowShape(flow + vec2(.07, -.04), span * 1.45, height * .91, uTime * .46 + .3));
-      float second = 1. - smoothstep(-.002, .003,
-        flowShape(vec2(-flow.x - .1, flow.y + .055), span * 1.2, height * .42, -uTime * .31));
-      float headGate = smoothstep(.15, .23, uv.y) * (1. - smoothstep(.74, .85, uv.y));
-      vec2 stretched = uCenter + (uv - uCenter) * vec2(.83, .94);
-      vec4 glass = sampleClean(uHelmet, stretched);
-      float ghostAlpha = (ribbon * .16 + second * .09) * headGate * uReveal;
-      vec3 glassColor = mix(vec3(.61, .64, .63), glass.rgb, .07);
-      color += glassColor * ghostAlpha * (1. - alpha);
-      alpha += ghostAlpha * (1. - alpha);
-
-      // A fine transparent helmet shell remains visible around and over the
-      // photograph, like the reference's softly drawn triangular surface.
-      vec2 shellUv = vec2(.49, .51) + (uv - vec2(.49, .51)) / vec2(1.045, 1.035);
-      float shell = sampleClean(uHelmet, shellUv).a;
-      float shellRight = sampleClean(uHelmet, shellUv + vec2(.002, 0.)).a;
-      float shellTop = sampleClean(uHelmet, shellUv + vec2(0., .002)).a;
-      float outline = min(1., abs(shell - shellRight) + abs(shell - shellTop));
-      float shellGate = (1. - smoothstep(.73, .83, uv.y)) * (1. - slice) * uReveal;
-      float wire = (meshLine(shellUv + vec2(.006 * sin(uv.y * 10.), 0.)) * shell * .035 + outline * .13) * shellGate;
-      vec3 wireColor = vec3(.55, .59, .58);
-      color = wireColor * wire + color * (1. - wire);
-      alpha = wire + alpha * (1. - wire);
-      gl_FragColor = vec4(color / max(alpha, .0001), alpha);
+      vec2 screen = uRect.xy + uv * uRect.zw;
+      vec4 flow = texture2D(uField, screen);
+      float mask = fluid(screen);
+      vec2 velocity = (flow.rg * 255. - 128.) / 24.;
+      vec2 refraction = velocity * .002 * mask;
+      vec4 person = clean(uPerson, uv);
+      vec4 helmet = clean(uHelmet, uv - refraction);
+      vec3 rgb = mix(person.rgb * person.a, helmet.rgb * helmet.a, mask);
+      float alpha = mix(person.a, helmet.a, mask);
+      vec2 shellUv = vec2(.49,.51) + (uv-vec2(.49,.51)) / vec2(1.045,1.035);
+      float shell = clean(uHelmet, shellUv).a;
+      float edge = abs(shell-clean(uHelmet,shellUv+vec2(.002,0.)).a)
+                 + abs(shell-clean(uHelmet,shellUv+vec2(0.,.002)).a);
+      float wire = (mesh(shellUv)*shell*.025 + min(1.,edge)*.10)
+                 * (1.-smoothstep(.73,.83,uv.y)) * (1.-mask) * uShell;
+      rgb = vec3(.55,.59,.62)*wire + rgb*(1.-wire);
+      alpha = wire + alpha*(1.-wire);
+      gl_FragColor = vec4(rgb/max(alpha,.0001),alpha);
+    }
+  `;
+  const airShader = fieldShader + `
+    void main(){
+      vec2 uv = vec2(vUv.x,1.-vUv.y);
+      float mask = fluid(uv);
+      gl_FragColor = vec4(.46,.51,.56,mask*.135);
     }
   `;
 
-  function createWebGL() {
-    const gl = canvas.getContext('webgl', {
-      alpha: true, antialias: false, depth: false, stencil: false,
-      premultipliedAlpha: false, powerPreference: 'low-power'
-    });
+  function webGL(surface, source, photo) {
+    const gl = surface.getContext('webgl', {alpha:true, antialias:false, depth:false,
+      stencil:false, premultipliedAlpha:false, powerPreference:'low-power'});
     if (!gl) return null;
-    const resources = [];
-    function shader(type, source) {
-      const s = gl.createShader(type);
-      if (type === gl.FRAGMENT_SHADER && !gl.getShaderPrecisionFormat(type, gl.HIGH_FLOAT)?.precision)
-        source = source.replace('precision highp', 'precision mediump');
-      gl.shaderSource(s, source); gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        const info = gl.getShaderInfoLog(s); gl.deleteShader(s); throw new Error(info);
-      }
-      resources.push(s); return s;
-    }
     try {
       const program = gl.createProgram();
-      gl.attachShader(program, shader(gl.VERTEX_SHADER, vertex));
-      gl.attachShader(program, shader(gl.FRAGMENT_SHADER, fragment));
+      for (const [type, text] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, source]]) {
+        const shader = gl.createShader(type);
+        const precision = type === gl.FRAGMENT_SHADER && !gl.getShaderPrecisionFormat(type,gl.HIGH_FLOAT)?.precision;
+        gl.shaderSource(shader, precision ? text.replace('precision highp','precision mediump') : text);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+        gl.attachShader(program,shader); gl.deleteShader(shader);
+      }
       gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+      if (!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
       gl.useProgram(program);
-      resources.forEach(s => gl.deleteShader(s));
-      const buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
-      const position = gl.getAttribLocation(program, 'aPosition');
-      gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-      images.forEach((img, i) => {
-        const texture = gl.createTexture();
-        gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-        gl.uniform1i(gl.getUniformLocation(program, i ? 'uHelmet' : 'uPerson'), i);
-      });
-      const uniforms = Object.fromEntries(['Center','Angle','Time','Energy','Reveal'].map(name => [name, gl.getUniformLocation(program, `u${name}`)]));
-      canvas.dataset.renderer = 'webgl';
-      return {
-        draw(state) {
-          gl.viewport(0, 0, canvas.width, canvas.height);
-          gl.uniform2f(uniforms.Center, state.x, state.y);
-          gl.uniform1f(uniforms.Angle, state.angle);
-          gl.uniform1f(uniforms.Time, state.time);
-          gl.uniform1f(uniforms.Energy, state.energy);
-          gl.uniform1f(uniforms.Reveal, state.reveal);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-        }
-      };
-    } catch (error) {
-      console.warn('Portrait WebGL unavailable; using canvas reveal.', error.message);
-      return null;
-    }
+      const buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+      const position = gl.getAttribLocation(program,'aPosition');
+      gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+      function texture(unit, name, image) {
+        const tex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0+unit); gl.bindTexture(gl.TEXTURE_2D,tex);
+        for (const p of [gl.TEXTURE_MIN_FILTER,gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D,p,gl.LINEAR);
+        for (const p of [gl.TEXTURE_WRAP_S,gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D,p,gl.CLAMP_TO_EDGE);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);
+        if (image) gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
+        gl.uniform1i(gl.getUniformLocation(program,name),unit); return tex;
+      }
+      if (photo) images.forEach((img,i) => texture(i,i?'uHelmet':'uPerson',img));
+      const flow = texture(2,'uField');
+      const uniforms = Object.fromEntries(['Rect','Fade','Shell'].map(n => [n,gl.getUniformLocation(program,'u'+n)]));
+      surface.dataset.renderer = 'webgl';
+      return {surface, draw(state){
+        gl.viewport(0,0,surface.width,surface.height);
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,flow);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,field.w,field.h,0,gl.RGBA,gl.UNSIGNED_BYTE,field.pixels);
+        gl.uniform4f(uniforms.Rect,...state.rect);
+        gl.uniform1f(uniforms.Fade,state.fade); gl.uniform1f(uniforms.Shell,1-thumbnail);
+        gl.drawArrays(gl.TRIANGLES,0,6);
+      }};
+    } catch (error) { console.warn('Fluid compositor fallback:',error.message); return null; }
   }
 
-  function createCanvasRenderer() {
-    // A canvas that has acquired a WebGL context cannot acquire a 2D context.
-    // Replace it only if shader setup failed on an otherwise WebGL-capable device.
-    let surface = canvas;
-    let ctx = surface.getContext('2d');
+  function canvas2D(original, photo) {
+    let surface = original, ctx = surface.getContext('2d');
     if (!ctx) {
-      surface = document.createElement('canvas');
-      surface.className = canvas.className;
-      surface.setAttribute('aria-hidden', 'true');
-      canvas.replaceWith(surface);
-      ctx = surface.getContext('2d');
+      surface = document.createElement('canvas'); surface.className = original.className;
+      surface.setAttribute('aria-hidden','true'); original.replaceWith(surface); ctx = surface.getContext('2d');
     }
     if (!ctx) return null;
+    const mask = document.createElement('canvas'), maskCtx = mask.getContext('2d');
+    const layer = document.createElement('canvas'), layerCtx = layer.getContext('2d');
     surface.dataset.renderer = 'canvas';
-    return {
-      surface,
-      draw(s) {
-        const w = surface.width, h = surface.height;
-        ctx.clearRect(0, 0, w, h);
-        ctx.drawImage(images[0], 0, 0, w, h);
-        if (!s.reveal) return;
-        const normal = [Math.cos(s.angle), Math.sin(s.angle)];
-        const tangent = [normal[1], -normal[0]];
-        const span = .26 + .025 * Math.sin(s.time * .34);
-        const height = .102 + .025 * Math.sin(s.time * .51) + s.energy * .022;
-        ctx.save(); ctx.beginPath();
-        [-1, 1].forEach((side, sideIndex) => {
-          for (let i = 0; i <= 80; i++) {
-            const u = (sideIndex ? 1 - i / 80 : i / 80) * 2 - 1;
-            const a = u * span;
-            const curl = .062 * Math.sin(u * 2.6 + s.time * .46) + .021 * Math.sin(u * 5.4 - s.time * .322);
-            const extent = height * Math.sqrt(Math.max(0, 1 - u * u)) * (.87 - .63 * u) * (1 + .1 * Math.sin(u * 5 + s.time * .276));
-            const d = curl + side * extent;
-            const x = (s.x + (tangent[0] * a + normal[0] * d) / (4 / 3)) * w;
-            const y = (s.y + tangent[1] * a + normal[1] * d) * h;
-            if (!sideIndex && !i) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-          }
-        });
-        ctx.closePath(); ctx.clip(); ctx.globalAlpha = s.reveal;
-        ctx.clearRect(0, 0, w, h); ctx.drawImage(images[1], 0, 0, w, h); ctx.restore();
+    return {surface, draw(state){
+      const w = surface.width, h = surface.height;
+      mask.width = field.w; mask.height = field.h;
+      const pixels = maskCtx.createImageData(field.w,field.h);
+      for (let i = 0; i < field.n; i++) {
+        const k = i*4;
+        pixels.data[k]=117; pixels.data[k+1]=130; pixels.data[k+2]=143;
+        pixels.data[k+3]=smooth((field.pixels[k+2]/255-.099)/.004)*state.fade*255;
       }
-    };
+      maskCtx.putImageData(pixels,0,0); ctx.clearRect(0,0,w,h);
+      if (!photo) {ctx.globalAlpha=.135;ctx.drawImage(mask,0,0,w,h);ctx.globalAlpha=1;return;}
+      ctx.drawImage(images[0],0,0,w,h);
+      if (!state.fade) return;
+      const [x,y,rw,rh] = state.rect, args=[mask,-x/rw*w,-y/rh*h,w/rw,h/rh];
+      ctx.globalCompositeOperation='destination-out';ctx.drawImage(...args);ctx.globalCompositeOperation='source-over';
+      layer.width=w;layer.height=h;layerCtx.drawImage(images[1],0,0,w,h);
+      layerCtx.globalCompositeOperation='destination-in';layerCtx.drawImage(...args);
+      layerCtx.globalCompositeOperation='source-over';ctx.drawImage(layer,0,0);
+    }};
   }
 
-  function drawAir(time, dt, reveal) {
-    if (!airContext) return;
-    const ctx = airContext, w = air.width, h = air.height;
-    ctx.clearRect(0, 0, w, h);
-    if (!reveal || thumbnail > .995) return;
-    const follow = 1 - Math.exp(-dt / 260);
-    airX = mix(airX, airTargetX, follow); airY = mix(airY, airTargetY, follow);
-    const driftX = (airX - .5) * pointerMix, driftY = (airY - .45) * pointerMix;
-    function leaf(x, y, length, height, rotation, opacity, phase) {
-      ctx.save(); ctx.translate(x * w, y * h); ctx.rotate(rotation);
-      const l = length * w, b = height * h;
-      const bend = Math.sin(phase) * .22;
-      ctx.beginPath(); ctx.moveTo(-l * .57, b * .1);
-      ctx.bezierCurveTo(-l * .77, -b * .47, -l * .42, -b * .83, -l * .07, -b * .44);
-      ctx.bezierCurveTo(l * .24, -b * (.1 + bend), l * .5, -b * .27, l * .64, -b * .14);
-      ctx.bezierCurveTo(l * .31, b * .13, l * .05, b * (.27 + bend), -l * .24, b * .54);
-      ctx.bezierCurveTo(-l * .46, b * .75, -l * .61, b * .43, -l * .57, b * .1);
-      ctx.closePath(); ctx.globalAlpha = opacity * reveal;
-      ctx.fillStyle = '#737c73'; ctx.fill();
-      ctx.globalAlpha = opacity * .36 * reveal; ctx.strokeStyle = '#84918a'; ctx.lineWidth = .7;
-      ctx.beginPath(); ctx.moveTo(-l * .57, b * .1);
-      ctx.bezierCurveTo(-l * .3, b * .2, l * .27, -b * .02, l * .64, -b * .14); ctx.stroke();
-      ctx.restore();
-    }
-    const t = time;
-    leaf(.26 + Math.sin(t * .19) * .065 + driftX * .22,
-      .45 + Math.cos(t * .27) * .12 + driftY * .2,
-      .44, .13, -.27 + Math.sin(t * .23) * .48 + driftX * .5, .12, t * .4);
-    leaf(.87 + Math.cos(t * .22) * .045 + driftX * .16,
-      .39 + Math.sin(t * .24) * .18 + driftY * .18,
-      .22, .075, .4 + Math.cos(t * .31) * .8, .105, t * .33 + 2);
-    leaf(.56 + Math.sin(t * .2) * .19 + driftX * .16,
-      .17 + Math.sin(t * .3 + 2) * .05 + driftY * .1,
-      .24, .065, Math.sin(t * .21) * .5, .09, t * .28);
-    leaf(.9 + Math.sin(t * .29) * .035, .23 + Math.cos(t * .33) * .12,
-      .018, .022, t * .18, .15, t * .3);
-  }
-
-  function resize() {
-    const surface = renderer?.surface || canvas;
-    const w = portrait.clientWidth, h = portrait.clientHeight;
-    if (!w || !h) return;
-    const scale = Math.min(devicePixelRatio || 1, 1.5, Math.sqrt((mobile.matches ? 950000 : 1650000) / (w * h)));
-    surface.width = Math.round(w * scale); surface.height = Math.round(h * scale);
-    const airScale = Math.min(devicePixelRatio || 1, 1.25, Math.sqrt(1000000 / (innerWidth * innerHeight)));
-    air.width = Math.round(innerWidth * airScale); air.height = Math.round(innerHeight * airScale);
-    if (ready && !running()) draw(performance.now(), 0);
-  }
-  function running() { return ready && wanted && thumbnail < .999 && !failed && !document.hidden && !reduced.matches; }
-  function schedule() {
-    if (!running() || frame) return;
-    previous = 0; frame = requestAnimationFrame(tick);
-  }
-  function setActive(active) {
-    wanted = !!active;
-    if (!wanted) {
-      cancelAnimationFrame(frame); frame = 0; previous = 0;
-      lastPointer = -10000; pointerMix = 0;
-      canvas.dataset.mode = 'paused';
-    } else schedule();
-  }
-  function setThumbnail(progress) {
-    const next = clamp(progress);
-    if (Math.abs(next - thumbnail) < .0001) return;
-    thumbnail = next;
-    air.style.opacity = String(1 - thumbnail);
+  function interactive() {return ready && wanted && !failed && !document.hidden && !reduced.matches && thumbnail < .995;}
+  function mode(value) {(renderer?.surface || canvas).dataset.mode = value;}
+  function draw(fade = 0) {
     if (!ready) return;
-    draw(performance.now(), 0);
-    if (thumbnail > .998) {
-      cancelAnimationFrame(frame); frame = 0; previous = 0;
-      canvas.dataset.mode = 'thumbnail';
-    } else schedule();
+    const p = portrait.getBoundingClientRect(), s = scene.getBoundingClientRect();
+    const state = {fade:fade * (1-thumbnail)**2,
+      rect:[(p.left-s.left)/s.width,(p.top-s.top)/s.height,p.width/s.width,p.height/s.height]};
+    renderer.draw(state); airRenderer?.draw(state);
+    const surface = renderer.surface;
+    surface.dataset.frames=String(++draws);surface.dataset.strength=field.peak.toFixed(3);
+    surface.dataset.fade=state.fade.toFixed(3);
+    surface.dataset.pointer=lastPoint ? `${lastPoint.x.toFixed(3)},${lastPoint.y.toFixed(3)}` : '';
   }
-  function draw(now, dt) {
-    const follow = 1 - Math.exp(-dt / 105);
-    pointerX = mix(pointerX, targetX, follow); pointerY = mix(pointerY, targetY, follow);
-    energy = mix(energy, targetEnergy, 1 - Math.exp(-dt / 160));
-    targetEnergy *= Math.exp(-dt / 220);
-    const interactive = now - lastPointer < 360;
-    pointerMix = mix(pointerMix, interactive ? 1 : 0, 1 - Math.exp(-dt / (interactive ? 140 : 1250)));
-    const idleX = .5 + Math.sin(elapsed * .32) * .065;
-    const idleY = .49 + Math.sin(elapsed * .39) * .11;
-    centerX = mix(idleX, pointerX, pointerMix);
-    centerY = mix(idleY, pointerY, pointerMix);
-    const idleAngle = Math.PI / 2 + Math.sin(elapsed * .3) * 1.52;
-    const pointerAngle = Math.PI / 2 + (pointerX - .5) * 3.7 + (pointerY - .52) * .7;
-    angle = mix(idleAngle, pointerAngle, pointerMix);
-    const reveal = reduced.matches ? 0 : clamp(elapsed / 1.1) * (1 - thumbnail);
-    renderer.draw({x:centerX, y:centerY, angle, time:elapsed, energy:energy * pointerMix, reveal});
-    drawAir(elapsed, dt, reveal);
-    if (now - dataTime > 240 || reduced.matches) {
-      const mode = reduced.matches ? 'static' : thumbnail > .998 ? 'thumbnail' : interactive || pointerMix > .12 ? 'pointer' : 'idle';
-      canvas.dataset.mode = mode;
-      canvas.dataset.center = `${centerX.toFixed(3)},${centerY.toFixed(3)}`;
-      canvas.dataset.phase = elapsed.toFixed(2);
-      dataTime = now;
-    }
+  function stop(reason) {
+    cancelAnimationFrame(frame);frame=0;previous=0;pending=[];lastPoint=null;lastInput=-Infinity;
+    if (field) field.clear();
+    if (ready) draw();
+    mode(reason);
   }
   function tick(now) {
-    frame = 0;
-    if (!running()) return;
-    const dt = previous ? Math.min(now - previous, 40) : 16.667;
-    previous = now; elapsed += dt / 1000;
-    draw(now, dt); frame = requestAnimationFrame(tick);
+    frame=0;
+    if (!interactive()) return;
+    const age=now-lastInput;
+    if (age>=620) {stop('idle');return;}
+    const dt=previous ? clamp(now-previous,8,33.334) : 16.667;previous=now;
+    // Let the last impulse settle briefly, then hold its shape while it clears.
+    // A stationary cursor never adds force or starts another animation.
+    if (age<140 || pending.length) field.step(dt,pending.splice(0));
+    const fade=1-smooth((age-100)/500);
+    draw(fade);mode(age<100?'pointer':'settling');
+    frame=requestAnimationFrame(tick);
   }
-
-  document.addEventListener('pointermove', event => {
-    if (!running() || event.pointerType === 'touch') return;
-    const rect = portrait.getBoundingClientRect();
-    const x = clamp((event.clientX - rect.left) / rect.width, .2, .8);
-    const y = clamp((event.clientY - rect.top) / rect.height, .27, .77);
-    const now = performance.now();
-    const speed = Math.hypot(x - targetX, y - targetY) / Math.max((now - lastEventTime) / 1000, .016);
-    targetEnergy = clamp(speed * .6); targetX = x; targetY = y;
-    airTargetX = event.clientX / innerWidth; airTargetY = event.clientY / innerHeight;
-    lastEventTime = now; lastPointer = now;
-  }, {passive:true});
-  document.addEventListener('pointerleave', () => { lastPointer = -10000; });
-  window.addEventListener('resize', resize, {passive:true});
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { cancelAnimationFrame(frame); frame = 0; previous = 0; }
-    else schedule();
-  });
-  reduced.addEventListener('change', () => {
-    cancelAnimationFrame(frame); frame = 0; previous = 0;
-    if (ready) { draw(performance.now(), 0); schedule(); }
-  });
-  canvas.addEventListener('webglcontextlost', event => {
-    event.preventDefault(); failed = true; cancelAnimationFrame(frame); frame = 0;
-    portrait.classList.remove('fluid-ready'); canvas.style.visibility = 'hidden';
-  });
-  canvas.addEventListener('webglcontextrestored', () => {
-    failed = false; renderer = createWebGL();
-    if (renderer) {
-      canvas.style.visibility = ''; portrait.classList.add('fluid-ready');
-      resize(); draw(performance.now(), 0); schedule();
+  function setActive(active) {
+    if (wanted===!!active) return;
+    wanted=!!active;
+    stop(!wanted?'paused':reduced.matches?'static':thumbnail>=.995?'thumbnail':'idle');
+  }
+  function setThumbnail(progress) {
+    const next=clamp(progress);
+    if (Math.abs(next-thumbnail)<.0001) return;
+    thumbnail=next;air.style.opacity=String(1-thumbnail);
+    if (!ready) return;
+    if (next>=.995) {if (frame || (renderer.surface).dataset.mode!=='thumbnail') stop('thumbnail');}
+    else {
+      draw(frame ? 1-smooth((performance.now()-lastInput-100)/500) : 0);
+      if (!frame) mode(!wanted?'paused':reduced.matches?'static':'idle');
     }
+  }
+  function resize() {
+    width=scene.clientWidth||innerWidth;height=scene.clientHeight||innerHeight;
+    const long=Math.min(mobile.matches?132:192,Math.max(96,Math.round(Math.max(width,height)*.1)));
+    field=new FlowField(Math.max(24,Math.round(long*width/Math.max(width,height))),Math.max(24,Math.round(long*height/Math.max(width,height))));
+    if (!ready) return;
+    const surface=renderer.surface,w=portrait.clientWidth,h=portrait.clientHeight;
+    const scale=Math.min(devicePixelRatio||1,1.5,Math.sqrt((mobile.matches?950000:1650000)/(w*h)));
+    surface.width=Math.round(w*scale);surface.height=Math.round(h*scale);
+    if (airRenderer) {
+      const scale=Math.min(devicePixelRatio||1,1.25,Math.sqrt(1000000/(width*height)));
+      airRenderer.surface.width=Math.round(width*scale);airRenderer.surface.height=Math.round(height*scale);
+    }
+    stop(!wanted?'paused':reduced.matches?'static':thumbnail>=.995?'thumbnail':'idle');
+  }
+  document.addEventListener('pointermove',event => {
+    if (!interactive() || event.pointerType==='touch') {lastPoint=null;return;}
+    const events=event.getCoalescedEvents?.();
+    for (const point of events?.length?events:[event]) {
+      const s=scene.getBoundingClientRect();
+      const x=clamp((point.clientX-s.left)/s.width),y=clamp((point.clientY-s.top)/s.height);
+      const now=performance.now();
+      const mx=Number(point.movementX)||0,my=Number(point.movementY)||0;
+      if (!lastPoint && Math.hypot(mx,my)>.2 && Math.hypot(mx,my)<Math.max(width,height)*.2)
+        lastPoint={x:clamp(x-mx/s.width),y:clamp(y-my/s.height),time:now};
+      if (lastPoint) {
+        const distance=Math.hypot((x-lastPoint.x)*width,(y-lastPoint.y)*height);
+        if (distance<.2) continue;
+        // Discard re-entry jumps, not continuous strokes across the blank space.
+        if (now-lastPoint.time<150 && distance<Math.max(width,height)*.65) {
+          pending.push({px:lastPoint.x,py:lastPoint.y,x,y});lastInput=now;
+          (renderer.surface).dataset.input=`${x.toFixed(3)},${y.toFixed(3)}`;
+        }
+      }
+      lastPoint={x,y,time:now};
+    }
+    if (pending.length && !frame) {previous=0;frame=requestAnimationFrame(tick);}
+  },{passive:true});
+  document.addEventListener('pointerleave',() => {lastPoint=null;});
+  document.addEventListener('visibilitychange',() => stop(document.hidden?'paused':!wanted?'paused':'idle'));
+  window.addEventListener('resize',resize,{passive:true});
+  reduced.addEventListener('change',() => stop(reduced.matches?'static':!wanted?'paused':'idle'));
+  canvas.addEventListener('webglcontextlost',event => {
+    event.preventDefault();failed=true;stop('paused');portrait.classList.remove('fluid-ready');
+    canvas.style.visibility='hidden';
   });
-  window.HeroFluid = {setActive, setThumbnail};
-
+  canvas.addEventListener('webglcontextrestored',() => {
+    failed=false;renderer=webGL(canvas,portraitShader,true);
+    if (renderer) {canvas.style.visibility='';portrait.classList.add('fluid-ready');resize();}
+  });
+  window.HeroFluid={setActive,setThumbnail};
   function loadImage(path) {
-    return new Promise((resolve, reject) => {
-      const img = new Image(); img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img); img.onerror = reject; img.src = path;
+    return new Promise((resolve,reject) => {
+      const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=path;
     });
   }
-  Promise.all([loadImage(content.heroImage), loadImage(content.heroHelmetImage)]).then(loaded => {
-    images = loaded;
-    renderer = createWebGL() || createCanvasRenderer();
-    if (!renderer) { canvas.remove(); return; }
-    ready = true; resize(); draw(performance.now(), 0);
-    canvas.dataset.mode = !wanted ? 'paused' : thumbnail > .998 ? 'thumbnail' : reduced.matches ? 'static' : 'idle';
-    portrait.classList.add('fluid-ready');
+  Promise.all([loadImage(content.heroImage),loadImage(content.heroHelmetImage)]).then(loaded => {
+    images=loaded;renderer=webGL(canvas,portraitShader,true)||canvas2D(canvas,true);
+    airRenderer=webGL(air,airShader,false)||canvas2D(air,false);
+    if (!renderer) {canvas.remove();air.remove();return;}
+    wanted=wanted&&!document.body.classList.contains('detail-mode')&&scene.style.visibility!=='hidden';
+    ready=true;resize();portrait.classList.add('fluid-ready');
     new ResizeObserver(resize).observe(portrait);
-    wanted = wanted && !document.body.classList.contains('detail-mode')
-      && document.querySelector('.hero-scene').style.visibility !== 'hidden';
-    schedule();
-  }).catch(() => { canvas.remove(); air.remove(); });
+  }).catch(() => {canvas.remove();air.remove();});
 })();

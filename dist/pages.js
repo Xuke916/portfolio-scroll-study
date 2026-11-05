@@ -76,9 +76,9 @@
   function build(name) {
     data = window.PORTFOLIO_CONTENT.pages[name];
     const projects = data.projects;
-    const hasCollage = data.showGallery !== false, coverOnly = data.projectLayout === 'covers';
+    const hasStatement = data.showStatement !== false, hasCollage = data.showGallery !== false, coverOnly = data.projectLayout === 'covers';
     const sections = [
-      ['hero', '开场'], ['story', '创作介绍'],
+      ['hero', '开场'], ...(hasStatement ? [['story', '创作介绍']] : []),
       ...(hasCollage ? [['collage', data.galleryTitle]] : []),
       ['projects', data.projectsTitle]
     ];
@@ -93,15 +93,15 @@
             <svg class="detail-hero-scribble" viewBox="0 0 900 600" aria-hidden="true"><path d="M80 510C-70 580 250 190 415 150S840 15 725 210L462 513 535 282 330 558 649 30"/></svg>
             <div class="detail-object">${data.heroImage ? media(data.heroImage, 'IMAGE / 01', 'detail-object-image') : sculpture()}<span class="mono detail-object-note">${esc(data.mark)} / VISUAL PLACEHOLDER</span></div>
             <div class="detail-hero-copy"><div class="detail-meta mono"><span>PORTFOLIO / 2026</span><span>${esc(data.english)}</span><span>IMAGE / 01</span></div><span class="detail-copy-kicker mono">ABOUT / TEXT PLACEHOLDER</span><div class="detail-copy-lines" aria-label="简介文字占位"><i></i><i></i><i></i><i></i></div><svg class="detail-small-signature" viewBox="0 0 100 38" aria-hidden="true"><path d="m3 28 50-21-29 26L68 6 46 30l42-16-21 21M8 27l83-4"/></svg><div class="detail-facts"><div><span class="mono">PROJECT / 01</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div><div><span class="mono">PROJECT / 02</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div><div><span class="mono">PROJECT / 03</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div></div></div>
-            <button class="detail-scroll mono" data-section="story">SCROLL TO EXPLORE <span>↓</span></button>
+            <button class="detail-scroll mono" data-section="${sections[1][0]}">SCROLL TO EXPLORE <span>↓</span></button>
           </div>
         </section>
-        <section class="detail-section detail-story" data-detail-section="story"><div class="detail-sticky">
+        ${hasStatement ? `<section class="detail-section detail-story" data-detail-section="story"><div class="detail-sticky">
           <span class="detail-section-kicker mono">02 / ${name === 'work' ? 'CREATIVE STATEMENT' : 'LIFE IN MOTION'}</span>
           <div class="detail-story-type" aria-label="标题内容占位">${data.statement.map((line, i) => `<span class="story-line story-line-${i}">${esc(line)}</span>`).join('')}</div>
           <div class="detail-statement-media">${media(data.statementImage, 'IMAGE / 02')}<span class="mono">TEXT / IMAGE PLACEHOLDER</span></div>
           <span class="detail-story-bottom mono">SCROLL TO REVEAL ↓</span>
-        </div></section>
+        </div></section>` : ''}
         ${hasCollage ? `<section class="detail-section detail-collage" data-detail-section="collage"><div class="detail-sticky">
           <span class="detail-section-kicker mono">03 / SELECTED VISUALS</span><h2 class="detail-collage-heading"><em>${esc(data.galleryTitle.slice(0, 2))}</em><strong>${esc(data.galleryTitle.slice(2))}</strong></h2>
           ${[0, 1, 2, 3].map((i) => `<figure class="detail-collage-card collage-${i}">${media(projects[i % projects.length].detailImage || projects[i % projects.length].image, 'IMAGE / '+String(i+3).padStart(2,'0'))}<figcaption class="mono">VISUAL / ${String(i+1).padStart(2,'0')}</figcaption></figure>`).join('')}
@@ -159,9 +159,11 @@
     ui.object.style.transform=`perspective(1300px) translate3d(${mouseX*18}px,${hp*15-mouseY*8}px,0) rotateY(${mouseX*9+hp*18}deg) rotateZ(${-4-hp*5}deg) scale(${mix(1,.9,hp)})`;
     ui.scribble.style.transform=`translate3d(${-mouseX*15}px,${-hp*35}px,0) rotate(${mouseX*3}deg)`;
     ui.heroCopy.style.transform=`translate3d(0,${-hp*35}px,0)`;
-    const sp=clamp((y-s.story.start)/Math.max(1,s.story.length-h));
-    ui.storyLines.forEach((line,i)=>{line.style.transform=`translate3d(${(i%2?1:-1)*sp*w*.2+mouseX*(i+1)*4}px,${-sp*h*.13}px,0)`;line.style.opacity=1-smooth((sp-.45)/.55)*.85;});
-    ui.statement.style.transform=`translate3d(calc(-50% + ${mouseX*12}px),calc(-50% + ${mouseY*8}px),0) rotate(${mix(-8,0,sp)}deg) scale(${mix(.58,2.6,smooth(sp))})`;
+    if(s.story){
+      const sp=clamp((y-s.story.start)/Math.max(1,s.story.length-h));
+      ui.storyLines.forEach((line,i)=>{line.style.transform=`translate3d(${(i%2?1:-1)*sp*w*.2+mouseX*(i+1)*4}px,${-sp*h*.13}px,0)`;line.style.opacity=1-smooth((sp-.45)/.55)*.85;});
+      ui.statement.style.transform=`translate3d(calc(-50% + ${mouseX*12}px),calc(-50% + ${mouseY*8}px),0) rotate(${mix(-8,0,sp)}deg) scale(${mix(.58,2.6,smooth(sp))})`;
+    }
     if(s.collage){
       const cp=clamp((y-s.collage.start)/Math.max(1,s.collage.length-h));
       ui.collageCards.forEach((card,i)=>card.style.transform=`translate3d(${-mouseX*(i+1)*4}px,${-cp*h*(.12+i*.07)-mouseY*6}px,0)`);

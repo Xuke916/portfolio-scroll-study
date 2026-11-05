@@ -13,7 +13,7 @@ window.PORTFOLIO_CONTENT = {
     work: {
       title: ["专业", "作品"], english: "PROFESSIONAL WORK", mark: "WORK",
       heroImage: "", statementImage: "", statement: ["探索", "创造", "体验"],
-      galleryTitle: "专业项目", projectsTitle: "个人项目", showGallery: false, projectLayout: "covers",
+      galleryTitle: "专业项目", projectsTitle: "个人项目", showStatement: false, showGallery: false, projectLayout: "covers",
       projects: ["项目01", "项目02", "项目03", "other work"].map((title, i) => ({
         slug: i < 3 ? "project-0" + (i + 1) : "other-work", title, image: "", category: "",
         year: "", role: "", overview: "",
