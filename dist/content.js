@@ -8,12 +8,17 @@ window.PORTFOLIO_CONTENT = {
     lines: ["YOUR STORY GOES HERE", "YOUR WORDS GO HERE"]
   },
   gallery: Array.from({ length: 8 }, (_, i) => ({ image: "", caption: "IMAGE / " + String(i + 2).padStart(2, "0") })),
+  footer: { portrait: "", headline: [["YOUR", "STORY"], ["GOES", "HERE"]], socials: [] },
   pages: {
     work: {
       title: ["专业", "作品"], english: "PROFESSIONAL WORK", mark: "WORK",
       heroImage: "", statementImage: "", statement: ["探索", "创造", "体验"],
       galleryTitle: "专业项目", projectsTitle: "个人项目", showGallery: false, projectLayout: "covers",
-      projects: ["项目01", "项目02", "项目03", "other work"].map(title => ({ title, image: "", category: "" }))
+      projects: ["项目01", "项目02", "项目03", "other work"].map((title, i) => ({
+        slug: i < 3 ? "project-0" + (i + 1) : "other-work", title, image: "", category: "",
+        year: "", role: "", overview: "",
+        gallery: [{ image: "", caption: "" }, { image: "", caption: "" }]
+      }))
     },
     life: {
       title: ["日常", "生活"], english: "DAILY LIFE", mark: "LIFE",
