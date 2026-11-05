@@ -21,8 +21,9 @@
   let frame = 0, previous = 0, lastInput = -Infinity, lastPoint = null, draws = 0;
   let thumbnail = clamp(Number(scene.style.getPropertyValue('--thumb-progress')) || 0);
   let pending = [], field, width = 1, height = 1;
-  const IDLE_GAP = 2000, SWEEP_DURATION = 2600;
+  const IDLE_GAP = 2000, SWEEP_DURATION = 2600, HANDOFF_DURATION = 220;
   let idleTimer = 0, cycle = null, cycles = 0, driver = 'none', currentFade = 0;
+  let handoff = null, pointerBlend = 1;
 
   // Both the helmet reveal and blank-space shapes sample one screen-space
   // velocity field. The idle pass feeds a curved stroke into that same solver;
@@ -47,11 +48,11 @@
     }
     inject(stroke) {
       const {w, h, x, y} = this;
-      const radius = Math.min(18, Math.max(10, Math.min(w, h) * .22));
+      const radius = Math.min(18, Math.max(10, Math.min(w, h) * .22)) * (stroke.radiusScale ?? 1);
       const dx = (stroke.x - stroke.px) * w, dy = (stroke.y - stroke.py) * h;
       const count = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (radius * .32)));
-      const forceX = clamp((stroke.x - stroke.px) * 50 / count, -2.5, 2.5);
-      const forceY = clamp((stroke.y - stroke.py) * 50 / count, -2.5, 2.5);
+      const forceX = clamp((stroke.x - stroke.px) * 50 / count, -2.5, 2.5) * (stroke.strength ?? 1);
+      const forceY = clamp((stroke.y - stroke.py) * 50 / count, -2.5, 2.5) * (stroke.strength ?? 1);
       for (let step = 1; step <= count; step++) {
         const cx = stroke.px * w + dx * step / count;
         const cy = stroke.py * h + dy * step / count;
@@ -202,12 +203,16 @@
       }
       if (photo) images.forEach((img,i) => texture(i,i?'uHelmet':'uPerson',img));
       const flow = texture(2,'uField');
+      let flowWidth=0,flowHeight=0;
       const uniforms = Object.fromEntries(['Rect','Fade','Shell'].map(n => [n,gl.getUniformLocation(program,'u'+n)]));
       surface.dataset.renderer = 'webgl';
       return {surface, draw(state){
         gl.viewport(0,0,surface.width,surface.height);
         gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,flow);
-        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,field.w,field.h,0,gl.RGBA,gl.UNSIGNED_BYTE,field.pixels);
+        if (flowWidth!==field.w || flowHeight!==field.h) {
+          gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,field.w,field.h,0,gl.RGBA,gl.UNSIGNED_BYTE,field.pixels);
+          flowWidth=field.w;flowHeight=field.h;
+        } else gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,field.w,field.h,gl.RGBA,gl.UNSIGNED_BYTE,field.pixels);
         gl.uniform4f(uniforms.Rect,...state.rect);
         gl.uniform1f(uniforms.Fade,state.fade); gl.uniform1f(uniforms.Shell,1-thumbnail);
         gl.drawArrays(gl.TRIANGLES,0,6);
@@ -258,19 +263,49 @@
     idleTimer=setTimeout(() => {
       idleTimer=0;
       if (!interactive() || thumbnail>=.02) return;
-      cycle={start:performance.now(),point:null};driver='ambient';previous=0;
+      const count=Math.random()<.5?1:2;
+      cycle={start:performance.now(),lanes:Array.from({length:count},(_,i)=>({
+        y:count===1?.48+Math.random()*.08:.39+i*.26+(Math.random()-.5)*.025,
+        bend:.028+Math.random()*.022,warp:(Math.random()-.5)*.035,
+        phase:(Math.random()-.5)*.12,radiusScale:count===1?.92:.55,point:null
+      }))};driver='ambient';previous=0;handoff=null;pointerBlend=1;
       field.clear();pending=[];lastPoint=null;
       renderer.surface.dataset.cycle=String(++cycles);
+      renderer.surface.dataset.ribbons=String(count);
       frame=requestAnimationFrame(tick);
     },IDLE_GAP);
   }
-  function idlePoint(progress) {
-    // A broad left-to-right sweep returns along a slightly higher curve. Map
-    // portrait coordinates into screen space so it stays on the head at any size.
+  function idlePoint(progress,lane) {
+    // Each pass has one or two separated, gently curved sources. Their paths are
+    // chosen once per pass and share the pointer's continuously advected field.
+    progress=clamp(progress+lane.phase*Math.sin(progress*Math.PI));
     const angle=progress*Math.PI*2;
-    const x=.5-.36*Math.cos(angle),y=.52+.055*Math.sin(angle)+.018*Math.sin(angle*2);
+    const x=.5-.36*Math.cos(angle),y=lane.y+lane.bend*Math.sin(angle)+lane.warp*Math.sin(angle*2);
     const p=portrait.getBoundingClientRect(),s=scene.getBoundingClientRect();
     return {x:(p.left-s.left+x*p.width)/s.width,y:(p.top-s.top+y*p.height)/s.height};
+  }
+  function idleStrokes(now,strength=1) {
+    if (!cycle) return null;
+    const progress=clamp((now-cycle.start)/SWEEP_DURATION);
+    const strokes=[];
+    for (const lane of cycle.lanes) {
+      const point=idlePoint(progress,lane);
+      if (lane.point && strength>0) strokes.push({px:lane.point.x,py:lane.point.y,...point,radiusScale:lane.radiusScale,strength});
+      lane.point=point;
+    }
+    renderer.surface.dataset.sweep=progress<.5?'right':'left';
+    if (progress>=1) cycle=null;
+    return {strokes,progress};
+  }
+  function takePointer(now) {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer=0;
+    if (driver==='ambient') {
+      // Retain the solver, its momentum, the current opacity and its scheduled
+      // frame. Only the two sources' forces change over this short overlap.
+      handoff={start:now,fade:currentFade};pointerBlend=0;
+    }
+    driver='pointer';
   }
   function draw(fade = 0) {
     if (!ready) return;
@@ -284,9 +319,10 @@
     surface.dataset.fade=state.fade.toFixed(3);
     surface.dataset.pointer=lastPoint ? `${lastPoint.x.toFixed(3)},${lastPoint.y.toFixed(3)}` : '';
     surface.dataset.driver=driver;
+    surface.dataset.blend=pointerBlend.toFixed(3);
   }
   function stop(reason) {
-    cancelIdle();driver='none';
+    cancelIdle();driver='none';handoff=null;pointerBlend=1;
     cancelAnimationFrame(frame);frame=0;previous=0;pending=[];lastPoint=null;lastInput=-Infinity;
     if (field) field.clear();
     if (ready) draw();
@@ -295,20 +331,26 @@
   function tick(now) {
     frame=0;
     if (!interactive()) return;
-    const dt=previous ? clamp(now-previous,8,33.334) : 16.667;previous=now;
-    if (cycle) {
-      const progress=clamp((now-cycle.start)/SWEEP_DURATION),point=idlePoint(progress);
-      const strokes=cycle.point ? [{px:cycle.point.x,py:cycle.point.y,...point}] : [];
-      field.step(dt,strokes);cycle.point=point;lastInput=now;
-      renderer.surface.dataset.sweep=progress<.5?'right':'left';
-      draw(smooth(progress/.08));mode('ambient');
-      if (progress>=1) cycle=null;
+    const dt=previous ? clamp(now-previous,4,33.334) : 16.667;previous=now;
+    pointerBlend=handoff?smooth((now-handoff.start)/HANDOFF_DURATION):1;
+    const ambient=idleStrokes(now,handoff?1-pointerBlend:1);
+    if (handoff) {
+      const strokes=pending.splice(0).map(stroke=>({...stroke,strength:.3+.7*pointerBlend}));
+      field.step(dt,[...(ambient?.strokes||[]),...strokes]);lastInput=now;
+      draw(handoff.fade+(1-handoff.fade)*pointerBlend);mode('handoff');
+      if (pointerBlend>=1) {handoff=null;cycle=null;mode('pointer');}
+      frame=requestAnimationFrame(tick);return;
+    }
+    if (ambient) {
+      field.step(dt,ambient.strokes);lastInput=now;
+      draw(smooth(ambient.progress/.08));mode('ambient');
       frame=requestAnimationFrame(tick);return;
     }
     const age=now-lastInput;
     if (age>=620) {stop('idle');armIdle();return;}
-    // Let either source's last impulse settle, then clear it before the pause.
-    if (age<140 || pending.length) field.step(dt,pending.splice(0));
+    // Keep momentum evolving through the tail instead of freezing the field and
+    // abruptly unfreezing it when a new pointer event arrives.
+    field.step(dt,pending.splice(0));
     const fade=1-smooth((age-100)/500);
     draw(fade);mode(driver==='ambient'?'ambient-settling':age<100?'pointer':'settling');
     frame=requestAnimationFrame(tick);
@@ -365,7 +407,7 @@
         if (distance<.2) continue;
         // Discard re-entry jumps, not continuous strokes across the blank space.
         if (now-lastPoint.time<150 && distance<Math.max(width,height)*.65) {
-          cancelIdle();driver='pointer';
+          takePointer(now);
           pending.push({px:lastPoint.x,py:lastPoint.y,x,y});lastInput=now;
           (renderer.surface).dataset.input=`${x.toFixed(3)},${y.toFixed(3)}`;
         }
