@@ -16,6 +16,7 @@
   let ui = null, metrics = null, data = null, savedHome = null, queuedPop = null;
   const savedPositions = new Map();
   let touchGesture = null, suppressCoverClickUntil = 0;
+  let projectObserver = null;
 
   function projectRoute(project) { return 'work/' + project.slug; }
   function projectInfo(key) {
@@ -49,6 +50,18 @@
   function buildProject(info) {
     const {project,index} = info, projects = window.PORTFOLIO_CONTENT.pages.work.projects;
     data = window.PORTFOLIO_CONTENT.pages.work;
+    if(project.slug==='project-03'&&window.MoneyBallCaseStudy){
+      const previous=projects[(index+projects.length-1)%projects.length],next=projects[(index+1)%projects.length];
+      const pagination=`<section class="project-pagination" data-detail-section="projectNavigation"><a href="#${projectRoute(previous)}" data-project-route="${projectRoute(previous)}"><span class="mono">← 上一个项目</span><strong>${esc(previous.title)}</strong></a><button data-back-projects class="mono">返回个人项目 ↗</button><a href="#${projectRoute(next)}" data-project-route="${projectRoute(next)}"><span class="mono">下一个项目 →</span><strong>${esc(next.title)}</strong></a></section>`;
+      root.innerHTML='<button class="detail-back mono" data-back-projects>↖ 返回个人项目</button>'+window.MoneyBallCaseStudy.render({footer:footer(),pagination});
+      ui={kind:'project',caseStudy:true,article:$('.detail-route',root),heroTitle:$('.project-detail-title',root),projectCover:$('.project-detail-cover',root),sections:$$('[data-detail-section]',root),sectionButtons:$$('.mb-toc [data-section]',root),toc:$('.mb-toc',root),footerPhoto:$('.footer-portrait',root)};
+      window.MoneyBallCaseStudy.mount(root);measure();
+      if(typeof ResizeObserver!=='undefined'){
+        projectObserver=new ResizeObserver(()=>{if(route==='work/project-03'){measure();if(jump?.section){target=jump.to=metrics.sections[jump.section].anchor;}render(position);}});
+        projectObserver.observe(ui.article);
+      }
+      return;
+    }
     const gallery = project.gallery || [{image:'',caption:''},{image:'',caption:''}];
     root.innerHTML = `<button class="detail-back mono" data-back-projects>↖ 返回个人项目</button>
       <nav class="detail-section-nav" id="detail-section-navigation" aria-label="项目章节">${[['projectHero','项目封面'],['projectOverview','项目介绍'],['projectGallery','项目展示'],['footer','页尾']].map(([id,label],i)=>`<button data-section="${id}" aria-label="${label}" class="${i===0?'active':''}"><i></i><span>${String(i+1).padStart(2,'0')}</span></button>`).join('')}</nav>
@@ -134,6 +147,10 @@
     const h=window.PortfolioViewport(),w=innerWidth,mobile=w<=600;
     if(ui.kind==='project'){
       let offset=0;metrics={h,w,mobile,travel:0,sections:{}};
+      if(ui.caseStudy){
+        for(const el of ui.sections){const start=el.getBoundingClientRect().top+scrollY;metrics.sections[el.dataset.detailSection]={start,length:el.offsetHeight||h,anchor:Math.max(0,start+(parseFloat(getComputedStyle(el).paddingTop)||0)-(w<=1100?190:150))};}
+        metrics.max=Math.max(0,root.scrollHeight-h);ui.article.dataset.scrollHeight=String(root.scrollHeight);return;
+      }
       for(const el of ui.sections){const length=el.offsetHeight||h;metrics.sections[el.dataset.detailSection]={start:offset,length};offset+=length;}
       metrics.max=Math.max(0,offset-h);ui.article.dataset.scrollHeight=String(offset);return;
     }
@@ -155,8 +172,9 @@
     document.documentElement.style.setProperty('--header-color',menuPaused?'#f3f3eb':route==='life'?'#0a2447':'#f3f3eb');
     if(ui.footerPhoto)ui.footerPhoto.style.transform=`translate3d(${mouseX*8}px,${mouseY*5}px,0)`;
     if(ui.kind==='project'){
-      ui.projectCover.style.transform=`translate3d(0,${clamp(y/h)*22}px,0)`;
-      ui.sectionButtons.forEach(button=>{const section=s[button.dataset.section];const active=y>=section.start-h*.2&&y<section.start+section.length-h*.2;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
+      if(!ui.caseStudy)ui.projectCover.style.transform=`translate3d(0,${clamp(y/h)*22}px,0)`;
+      ui.sectionButtons.forEach((button,i)=>{const section=s[button.dataset.section],next=ui.sectionButtons[i+1];const active=ui.caseStudy?(y>=section.anchor-2||i===0)&&(!next||y<s[next.dataset.section].anchor-2):y>=section.start-h*.2&&y<section.start+section.length-h*.2;button.classList.toggle('active',active);if(active){button.setAttribute('aria-current','step');if(ui.caseStudy&&ui.activeToc!==button.dataset.section){ui.activeToc=button.dataset.section;if(innerWidth<=1100)ui.toc.scrollTo?.({left:Math.max(0,button.offsetLeft-ui.toc.clientWidth/2+button.offsetWidth/2),behavior:reduced.matches?'instant':'smooth'});}}else button.removeAttribute('aria-current');});
+      if(ui.caseStudy)ui.toc.classList.toggle('is-away',y>=s.projectNavigation.start-h*.2);
       progress.style.transform=`scaleX(${clamp(y/Math.max(1,metrics.max))})`;return;
     }
     const hp=clamp(y/Math.max(1,s.hero.length-h));
@@ -205,6 +223,7 @@
     request();
   }
   function applyRoute(to,{chapter='explore',restore=false,projectIndex}={}){
+    projectObserver?.disconnect();projectObserver=null;
     stop();route=to;mouseX=mouseY=aimX=aimY=0;
     if(to==='home'){
       $('.skip-link').href='#chapter-navigation';
@@ -219,7 +238,7 @@
       let destination=restore?(savedPositions.get(to)||0):0;
       if(to==='work'&&Number.isInteger(projectIndex))destination=metrics.sections.projects.start+Math.min(projectIndex*metrics.panelWidth,metrics.travel)/1.35;
       position=target=clamp(destination,0,metrics.max);written=position;write(position);render(position);
-      const title=info?info.project.title:data.title.join('');
+      const title=info?(info.project.caseTitle||info.project.title):data.title.join('');
       $('.skip-link').href='#detail-section-navigation';$('.live-status').textContent=title;
       document.title=title+' / Portfolio';
     }
@@ -265,6 +284,8 @@
     home(chapter='explore',{immediate=false}={}){transitionTo('home',{chapter,immediate});}
   };
   document.addEventListener('click',e=>{
+    const moneyImage=e.target.closest?.('[data-money-image]');
+    if(moneyImage&&ui?.caseStudy&&!busy){stop();window.MoneyBallCaseStudy.openImage(moneyImage.dataset.moneyImage,moneyImage.dataset.caption);return;}
     if(performance.now()<suppressCoverClickUntil&&e.target.closest?.('.project-art')){e.preventDefault();return;}
     if(e.target.closest?.('[data-footer-home]')){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();window.PortfolioPages.home('intro',{immediate:true});return;}
     const projectPage=e.target.closest?.('[data-project-route]');
@@ -273,7 +294,7 @@
     const open=e.target.closest?.('[data-open-page]');
     if(open){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();window.PortfolioPages.open(open.dataset.openPage);return;}
     if(e.target.closest?.('[data-return]')){e.preventDefault();window.PortfolioPages.home();return;}
-    const section=e.target.closest?.('[data-section]');if(section&&route!=='home'&&!busy){scrollToPosition(metrics.sections[section.dataset.section].start);return;}
+    const section=e.target.closest?.('[data-section]');if(section&&route!=='home'&&!busy){if(ui.caseStudy)measure();const destination=metrics.sections[section.dataset.section];scrollToPosition(ui.caseStudy?destination.anchor:destination.start);if(ui.caseStudy&&jump)jump.section=section.dataset.section;return;}
     const dot=e.target.closest?.('[data-project-position]');if(dot&&route!=='home'&&!busy){scrollToPosition(metrics.sections.projects.start+Math.min(Number(dot.dataset.projectPosition)*metrics.panelWidth,metrics.travel)/1.35);return;}
     const project=e.target.closest?.('[data-project-index]');
     if(project&&route!=='home'&&!busy){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();const item=data.projects[Number(project.dataset.projectIndex)];if(route==='work')transitionTo(projectRoute(item));else{stop();window.PortfolioHome.preview(item.image,item.title+' / 内容待补充');}}
@@ -296,7 +317,7 @@
   addEventListener('resize',()=>{
     if(route==='home'||!metrics)return;
     const old=metrics, entries=Object.entries(old.sections);
-    const [name,section]=entries.find(([,s])=>position>=s.start&&position<s.start+s.length)||entries.at(-1);
+    const [name,section]=entries.find(([,s])=>position>=s.start&&position<s.start+s.length)||(position<entries[0][1].start?entries[0]:entries.at(-1));
     const projectOffset=name==='projects'&&position<=section.start+section.length-old.h+1?(position-section.start)*1.35/old.panelWidth:null;
     const local=(position-section.start)/section.length;
     measure();

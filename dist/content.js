@@ -32,3 +32,8 @@ window.PORTFOLIO_CONTENT = {
     { title: ["日常", "生活"], eyebrow: "02 / DAILY LIFE", description: "", image: "" }
   ]
 };
+Object.assign(window.PORTFOLIO_CONTENT.pages.work.projects[2], {
+  caseTitle: 'Money Ball', image: 'assets/moneyball/image2.jpeg', year: '2025',
+  role: '独立设计与制作', category: '双人棒球策略桌游',
+  overview: '把球场上一瞬间的判断，转化为桌面上可以观察、预测和调整的选择。'
+});
