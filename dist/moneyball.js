@@ -1,6 +1,6 @@
 (() => {
  'use strict';
- const asset=n=>n===14?'assets/moneyball/defense-flow-v2.png':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'png':'jpeg'}`;
+ const asset=n=>n===14?'assets/moneyball/defense-flow-v3.png':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'png':'jpeg'}`;
  const sizes={1:[1702,1276],2:[1702,1276],3:[1280,1707],4:[1280,1707],5:[3750,1850],6:[1280,1707],7:[3750,1975],8:[1280,1707],9:[960,1280],10:[3750,1850],11:[1280,1707],12:[960,1280],13:[3750,2225],14:[3750,1850],15:[3750,1975],16:[1461,1076],17:[1280,1707],18:[960,1280],19:[1280,1707],20:[1280,1707]};
  sizes[14]=[1536,1024];
  const chapters=[['projectHero','项目概览'],['moneyOrigin','棒球经历'],['moneyRules','规则总览'],['moneyPrediction','投打预测'],['moneySimplification','规则简化'],['moneyDefense','守备与阵容'],['moneyMaterial','实体制作'],['moneyTesting','试玩与收获']];
@@ -12,11 +12,21 @@
  const note=(label,text)=>`<aside class="mb-note"><span class="mono">${label}</span><p>${text}</p></aside>`;
  const section=(id,no,en,title,lead,body)=>`<section class="mb-section" data-detail-section="${id}"><header class="mb-section-head"><span class="mb-chapter mono">${no} / ${en}</span><h2>${title}</h2><p class="mb-lead">${lead}</p></header>${body}</section>`;
  const table=(headers,rows)=>`<div class="mb-table-wrap"><table><thead><tr>${headers.map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((x,i)=>i?`<td>${x}</td>`:`<th scope="row">${x}</th>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+ function playtestGallery(){
+  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const items=window.PORTFOLIO_CONTENT?.pages.work.projects[2].playtestPhotos||[
+   {image:'',title:'试玩全景',caption:'双人对局与桌面布局'},
+   {image:'',title:'投打操作',caption:'标记、预测与揭牌的过程'},
+   {image:'',title:'守备与跑垒',caption:'掷骰判定与跑者推进'},
+   {image:'',title:'测试交流',caption:'规则确认与玩家反馈'}
+  ];
+  return `<div class="mb-playtest-gallery" aria-label="试玩照片">${items.map((item,i)=>`<figure class="mb-playtest-photo" data-playtest-slot="${i}">${item.image?`<button class="mb-image-button" data-money-image="${esc(item.image)}" data-caption="${esc(item.title+' · '+item.caption)}" aria-label="放大查看：${esc(item.title)}"><img src="${esc(item.image)}" alt="${esc(item.title)}" width="1600" height="1067" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button>`:`<div class="mb-playtest-empty" role="img" aria-label="${esc(item.title)}照片预留位置"><span class="mono">PHOTO / ${String(i+1).padStart(2,'0')}</span><span class="mb-slot-cross" aria-hidden="true"></span><span>照片待补充</span></div>`}<figcaption><strong>${esc(item.title)}</strong><span>${esc(item.caption)}</span></figcaption></figure>`).join('')}</div>`;
+ }
  function demo(){
   return `<div class="mb-demo" aria-label="投打预测机制演示"><div class="mb-demo-top"><span class="mono">INTERACTIVE / 固定示例</span><h3>同一个标记，你会怎样回应？</h3><p>为了说明机制，你可以预设球路；实际比赛中，投手会暗选球种。</p></div><div class="mb-demo-body"><div class="mb-demo-grid" aria-label="投打格子示意"></div><div class="mb-demo-controls"><fieldset><legend>球路示例</legend><label><input type="radio" name="mb-pitch" value="straight" checked>位置不变</label><label><input type="radio" name="mb-pitch" value="drop">向下移动一格</label></fieldset><fieldset><legend>打击覆盖</legend><label><input type="radio" name="mb-cover" value="3" checked>三格 · 覆盖更多位置</label><label><input type="radio" name="mb-cover" value="1">一格 · 冒险争取得分</label></fieldset><div class="mb-demo-status" aria-live="polite" aria-atomic="true"></div></div></div><div class="mb-demo-steps" aria-label="演示步骤"><button data-mb-step="0" aria-pressed="true"><span>01</span>展示标记</button><button data-mb-step="1" aria-pressed="false"><span>02</span>打者回应</button><button data-mb-step="2" aria-pressed="false"><span>03</span>揭晓结果</button></div><div class="mb-demo-legend"><span><i class="mb-key-zone"></i>中央九格好球区</span><span><i class="mb-key-cover"></i>打击覆盖</span><span><i class="mb-key-ball"></i>最终落点</span></div></div>`;
  }
  function render({footer,pagination}){
-  return `<nav class="mb-toc" id="detail-section-navigation" aria-label="Money Ball 项目章节"><span class="mono mb-toc-title">IN THIS PROJECT</span>${chapters.map(([id,label],i)=>`<button data-section="${id}"${i===0?' class="active" aria-current="step"':''}><span>${String(i+1).padStart(2,'0')}</span>${label}</button>`).join('')}</nav><article class="detail-route project-detail moneyball-case" data-route="work/project-03">
+  return `<button class="mb-toc-toggle" aria-label="打开项目目录" aria-controls="detail-section-navigation" aria-expanded="false">目录</button><nav class="mb-toc" id="detail-section-navigation" aria-label="Money Ball 项目章节"><span class="mono mb-toc-title">IN THIS PROJECT</span>${chapters.map(([id,label],i)=>`<button data-section="${id}"${i===0?' class="active" aria-current="step"':''}><span>${String(i+1).padStart(2,'0')}</span>${label}</button>`).join('')}</nav><article class="detail-route project-detail moneyball-case" data-route="work/project-03">
    <section class="mb-hero mb-section" data-detail-section="projectHero"><span class="mb-chapter mono">PERSONAL PROJECT / 03 · GAME DESIGN</span><div class="mb-hero-title"><h1 class="project-detail-title" tabindex="-1">Money<br><em>Ball</em><span class="mb-baseball" aria-hidden="true">↗</span></h1><div><span class="mb-tag">双人棒球策略桌游</span><p class="mb-hero-summary">把球场上一瞬间的判断，<br>变成桌面上可以思考的选择。</p></div></div><p class="mb-intro">我把投球、判断与挥棒拆成几个桌面步骤，让玩家有时间观察线索、揣摩对手，再为自己的选择承担风险。从高速球场到回合制桌面，保留每一球里的试探与调整。项目中投入最多的是机制设计与卡牌构筑。</p><dl class="mb-facts"><div><dt>开发时间</dt><dd>2025.02 — 06</dd></div><div><dt>人数与时长</dt><dd>2 人 / 25–30 分钟</dd></div><div><dt>个人工作</dt><dd>机制 · 卡牌 · 规则 · 美术 · 印刷</dd></div><div><dt>工具</dt><dd>Photoshop / Word</dd></div></dl><div class="project-detail-cover mb-hero-cover">${photo(2,'Money Ball 开箱总览，包含图板、卡牌、筹码和可擦写笔','实体原型 · 图板、卡牌与可擦写标记工具')}</div><div class="mb-overview-bottom"><span>从创作缘起到试玩反馈，按八个章节展开。</span><button class="mb-text-link" data-section="moneyOrigin">开始阅读 ↓</button></div></section>
    ${section('moneyOrigin','02','ORIGIN','从我的棒球经历出发','上一球的结果已经发生，下一球的选择仍然可以调整。',`
     <div class="mb-two-col"><div class="mb-prose"><p>我喜欢棒球中失败后仍要继续判断的时刻：上一球没打中，下一球却还能从刚才的经验里重新考虑。我想把这种不断调整的体验带到桌面，让玩家利用线索预测对手，也承担判断的风险。</p><p>卡牌人物来自我的校队。球员是队友，经理卡以球队经理为原型；位置、热区与技能，让他们的差异真正进入比赛。</p></div><div class="mb-principles"><div><b>01</b><p>提供能利用的线索，保留尚未公开的选择。</p></div><div><b>02</b><p>让覆盖范围表达玩家愿意承担的风险。</p></div><div><b>03</b><p>通过规则取舍，让不懂棒球的人也能参与判断。</p></div></div></div>
@@ -58,13 +68,21 @@
     <details class="mb-process-details"><summary>实体原型与后续过程材料 <span>＋</span></summary>${photo(1,'Money Ball 手工封面盒','封面盒实拍 · 项目实体原型')}<p>后续补齐卡牌草稿、Photoshop 文件与打样对照，以及对应版本的规则和试玩记录，让过程材料紧跟它所解释的设计选择。</p></details>`)}
    ${section('moneyTesting','08','PLAYTEST & REFLECTION','试玩，让规则回到玩家手上','四轮当面双人测试，分别观察棒球知识和桌游经验不同的玩家。',`
     ${table(['轮次','参与者','了解棒球','玩过桌游'],[['01','两名队友','是','是'],['02','两名队友','是','否'],['03','两名同学','否','是'],['04','两名同学','否','否']])}
-    <div class="mb-pending mb-playtest-pending"><span class="mono">PLAYTEST PHOTOS / 待补充</span><p>真实试玩照片尚未提供，此处保留展示位置。</p></div>
+    <p class="mb-playtest-intro">真实试玩照片尚未提供，以下四处为照片预留位置。</p>${playtestGallery()}
     <div class="mb-test-findings"><div><span class="mono">OBSERVATION 01</span><h3>前几球，会进入后面的判断</h3><p>试玩时，玩家会根据前几个打席的印象判断投球习惯。这让我看到分阶段公开信息的价值：揭晓不只结束一球，也给下一次选择留下依据。</p><p class="mb-caveat">这还不能说明每位玩家都学会了有效预测。下一轮，我会请玩家在揭牌前说出理由，记录他们实际使用了哪些线索。</p></div><div><span class="mono">OBSERVATION 02</span><h3>总时长之外，还要看等待发生在哪里</h3><p>当前一场约 25–30 分钟，一般打席约一分钟；连续擦棒时会更长。整场变短，不代表每个环节都已经流畅。</p><p class="mb-caveat">下一轮单独记录较长打席，区分有趣的试探、规则确认与重复结算，不把它们算作同一种等待。</p></div></div>
     <div class="mb-reflection"><span class="mono">WHAT I LEARNED</span><h3>用玩家知道什么、必须决定什么，来检查规则。</h3><p>我逐渐学会判断哪些棒球环节值得拆开，哪些细节可以缩短。起始标记、隐藏球种和打击覆盖，让瞬间完成的判断变成可以参与的选择；守备与跑垒，再把这一球接回整支球队。</p><p>玩家会猜对手的习惯，是值得保留的现象；它是否稳定发生、是否足够有趣，还需要更具体的记录。脚本模拟可以辅助检查数值，面对面的观察则帮助我看见玩家怎样理解和使用规则。</p></div>
     <div class="mb-next"><h3>下一步</h3><ul><li>更新旧版四格卡面，与当前三格规则统一。</li><li>检查三局是否足够玩家发现并利用彼此的习惯。</li><li>补充真实试玩照片、完整开箱与讲解视频、定稿规则书及版本记录。</li></ul><span class="mb-source-note">内容与实拍图片整理自《Money Ball 项目页大纲与流程图解》。图解为机制说明，待补充材料尚未作为成果展示。</span></div>`)}
    ${pagination}${footer}</article>`;
  }
  function mount(root){
+  const toc=root.querySelector('.mb-toc'),toggle=root.querySelector('.mb-toc-toggle');
+  const compact=matchMedia('(max-width:1100px)');
+  const setNav=open=>{const expanded=compact.matches&&open;toc.classList.toggle('is-open',expanded);toc.inert=compact.matches&&!expanded;toggle.setAttribute('aria-expanded',String(expanded));toggle.setAttribute('aria-label',expanded?'关闭项目目录':'打开项目目录');};
+  const onToggle=()=>setNav(toggle.getAttribute('aria-expanded')!=='true');
+  const onNavClick=e=>{if(e.target.closest('[data-section]')&&compact.matches)setNav(false);};
+  const onEscape=e=>{if(e.key==='Escape'&&toggle.getAttribute('aria-expanded')==='true'){setNav(false);toggle.focus();}};
+  const onMode=()=>setNav(false),onMenu=e=>{if(e.detail.open)setNav(false);};
+  toggle.addEventListener('click',onToggle);toc.addEventListener('click',onNavClick);document.addEventListener('keydown',onEscape);document.addEventListener('portfolio:menu',onMenu);compact.addEventListener('change',onMode);setNav(false);
   const demo=root.querySelector('.mb-demo');if(!demo)return;
   let step=0;
   function update(){
@@ -83,6 +101,7 @@
   }
   demo.addEventListener('click',e=>{const b=e.target.closest('[data-mb-step]');if(b){step=Number(b.dataset.mbStep);update();}});
   demo.addEventListener('change',()=>{step=0;update();});update();
+  return ()=>{document.removeEventListener('keydown',onEscape);document.removeEventListener('portfolio:menu',onMenu);compact.removeEventListener('change',onMode);};
  }
  function openImage(path,caption){
   window.PortfolioHome.preview(path,caption);

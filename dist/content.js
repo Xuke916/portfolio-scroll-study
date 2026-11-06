@@ -37,3 +37,9 @@ Object.assign(window.PORTFOLIO_CONTENT.pages.work.projects[2], {
   role: '独立设计与制作', category: '双人棒球策略桌游',
   overview: '把球场上一瞬间的判断，转化为桌面上可以观察、预测和调整的选择。'
 });
+window.PORTFOLIO_CONTENT.pages.work.projects[2].playtestPhotos = [
+  { image: '', title: '试玩全景', caption: '双人对局与桌面布局' },
+  { image: '', title: '投打操作', caption: '标记、预测与揭牌的过程' },
+  { image: '', title: '守备与跑垒', caption: '掷骰判定与跑者推进' },
+  { image: '', title: '测试交流', caption: '规则确认与玩家反馈' }
+];

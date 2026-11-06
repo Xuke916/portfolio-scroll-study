@@ -16,7 +16,7 @@
   let ui = null, metrics = null, data = null, savedHome = null, queuedPop = null;
   const savedPositions = new Map();
   let touchGesture = null, suppressCoverClickUntil = 0;
-  let projectObserver = null;
+  let projectObserver = null, caseCleanup = null;
 
   function projectRoute(project) { return 'work/' + project.slug; }
   function projectInfo(key) {
@@ -55,7 +55,7 @@
       const pagination=`<section class="project-pagination" data-detail-section="projectNavigation"><a href="#${projectRoute(previous)}" data-project-route="${projectRoute(previous)}"><span class="mono">← 上一个项目</span><strong>${esc(previous.title)}</strong></a><button data-back-projects class="mono">返回个人项目 ↗</button><a href="#${projectRoute(next)}" data-project-route="${projectRoute(next)}"><span class="mono">下一个项目 →</span><strong>${esc(next.title)}</strong></a></section>`;
       root.innerHTML='<button class="detail-back mono" data-back-projects>↖ 返回个人项目</button>'+window.MoneyBallCaseStudy.render({footer:footer(),pagination});
       ui={kind:'project',caseStudy:true,article:$('.detail-route',root),heroTitle:$('.project-detail-title',root),projectCover:$('.project-detail-cover',root),sections:$$('[data-detail-section]',root),sectionButtons:$$('.mb-toc [data-section]',root),toc:$('.mb-toc',root),footerPhoto:$('.footer-portrait',root)};
-      window.MoneyBallCaseStudy.mount(root);measure();
+      caseCleanup=window.MoneyBallCaseStudy.mount(root);measure();
       if(typeof ResizeObserver!=='undefined'){
         projectObserver=new ResizeObserver(()=>{if(route==='work/project-03'){measure();if(jump?.section){target=jump.to=metrics.sections[jump.section].anchor;}render(position);}});
         projectObserver.observe(ui.article);
@@ -148,7 +148,7 @@
     if(ui.kind==='project'){
       let offset=0;metrics={h,w,mobile,travel:0,sections:{}};
       if(ui.caseStudy){
-        for(const el of ui.sections){const start=el.getBoundingClientRect().top+scrollY;metrics.sections[el.dataset.detailSection]={start,length:el.offsetHeight||h,anchor:Math.max(0,start+(parseFloat(getComputedStyle(el).paddingTop)||0)-(w<=1100?190:150))};}
+        for(const el of ui.sections){const start=el.getBoundingClientRect().top+scrollY;metrics.sections[el.dataset.detailSection]={start,length:el.offsetHeight||h,anchor:Math.max(0,start+(parseFloat(getComputedStyle(el).paddingTop)||0)-(w<=600?140:150))};}
         metrics.max=Math.max(0,root.scrollHeight-h);ui.article.dataset.scrollHeight=String(root.scrollHeight);return;
       }
       for(const el of ui.sections){const length=el.offsetHeight||h;metrics.sections[el.dataset.detailSection]={start:offset,length};offset+=length;}
@@ -173,8 +173,7 @@
     if(ui.footerPhoto)ui.footerPhoto.style.transform=`translate3d(${mouseX*8}px,${mouseY*5}px,0)`;
     if(ui.kind==='project'){
       if(!ui.caseStudy)ui.projectCover.style.transform=`translate3d(0,${clamp(y/h)*22}px,0)`;
-      ui.sectionButtons.forEach((button,i)=>{const section=s[button.dataset.section],next=ui.sectionButtons[i+1];const active=ui.caseStudy?(y>=section.anchor-2||i===0)&&(!next||y<s[next.dataset.section].anchor-2):y>=section.start-h*.2&&y<section.start+section.length-h*.2;button.classList.toggle('active',active);if(active){button.setAttribute('aria-current','step');if(ui.caseStudy&&ui.activeToc!==button.dataset.section){ui.activeToc=button.dataset.section;if(innerWidth<=1100)ui.toc.scrollTo?.({left:Math.max(0,button.offsetLeft-ui.toc.clientWidth/2+button.offsetWidth/2),behavior:reduced.matches?'instant':'smooth'});}}else button.removeAttribute('aria-current');});
-      if(ui.caseStudy)ui.toc.classList.toggle('is-away',y>=s.projectNavigation.start-h*.2);
+      ui.sectionButtons.forEach((button,i)=>{const section=s[button.dataset.section],next=ui.sectionButtons[i+1];const active=ui.caseStudy?(y>=section.anchor-2||i===0)&&(!next||y<s[next.dataset.section].anchor-2):y>=section.start-h*.2&&y<section.start+section.length-h*.2;button.classList.toggle('active',active);if(active){button.setAttribute('aria-current','step');if(ui.caseStudy&&ui.activeToc!==button.dataset.section){ui.activeToc=button.dataset.section;ui.toc.scrollTop=Math.max(0,button.offsetTop-ui.toc.clientHeight/2+button.offsetHeight/2);}}else button.removeAttribute('aria-current');});
       progress.style.transform=`scaleX(${clamp(y/Math.max(1,metrics.max))})`;return;
     }
     const hp=clamp(y/Math.max(1,s.hero.length-h));
@@ -224,6 +223,7 @@
   }
   function applyRoute(to,{chapter='explore',restore=false,projectIndex}={}){
     projectObserver?.disconnect();projectObserver=null;
+    caseCleanup?.();caseCleanup=null;
     stop();route=to;mouseX=mouseY=aimX=aimY=0;
     if(to==='home'){
       $('.skip-link').href='#chapter-navigation';
