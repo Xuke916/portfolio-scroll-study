@@ -1,7 +1,8 @@
 (() => {
  'use strict';
- const asset=n=>`assets/moneyball/image${n}.${[5,7,10,13,14,15,16].includes(n)?'png':'jpeg'}`;
+ const asset=n=>n===14?'assets/moneyball/defense-flow-v2.png':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'png':'jpeg'}`;
  const sizes={1:[1702,1276],2:[1702,1276],3:[1280,1707],4:[1280,1707],5:[3750,1850],6:[1280,1707],7:[3750,1975],8:[1280,1707],9:[960,1280],10:[3750,1850],11:[1280,1707],12:[960,1280],13:[3750,2225],14:[3750,1850],15:[3750,1975],16:[1461,1076],17:[1280,1707],18:[960,1280],19:[1280,1707],20:[1280,1707]};
+ sizes[14]=[1536,1024];
  const chapters=[['projectHero','项目概览'],['moneyOrigin','棒球经历'],['moneyRules','规则总览'],['moneyPrediction','投打预测'],['moneySimplification','规则简化'],['moneyDefense','守备与阵容'],['moneyMaterial','实体制作'],['moneyTesting','试玩与收获']];
  function photo(n,alt,caption,cls=''){
   const [w,h]=sizes[n];
