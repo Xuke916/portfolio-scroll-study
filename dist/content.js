@@ -5,7 +5,7 @@ window.PORTFOLIO_CONTENT = {
   heroImage: "assets/hero-person.png",
   heroHelmetImage: "assets/hero-helmet.png",
   message: {
-    lines: ["YOUR STORY GOES HERE", "YOUR WORDS GO HERE"]
+    lines: ["YOUR STORY GOES HERE", "BE THE BEST OF THE BEST"]
   },
   gallery: Array.from({ length: 8 }, (_, i) => ({ image: "", caption: "IMAGE / " + String(i + 2).padStart(2, "0") })),
   footer: { portrait: "", headline: [["YOUR", "STORY"], ["GOES", "HERE"]], socials: [] },

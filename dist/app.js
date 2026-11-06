@@ -57,10 +57,17 @@
   }
   $('.wordmark>span').textContent = content.name[0];
   $('.wordmark>strong').textContent = content.name[1];
-  $$('.message-marquee>span').forEach((el, i) => {
+  $$('.message-marquee').forEach((row, i) => {
     const line = content.message?.lines[i] || 'TEXT PLACEHOLDER';
-    el.textContent = Array(6).fill(line).join(' / ') + ' / ';
+    const group = Array(3).fill(line).join(' / ') + ' / ';
+    row.replaceChildren(...Array.from({ length: 2 }, () => {
+      const span = document.createElement('span');
+      span.textContent = group;
+      span.setAttribute('aria-hidden', 'true');
+      return span;
+    }));
   });
+  $('.message-marquees').setAttribute('aria-label', content.message.lines.join(' / '));
   fillUserImage(portrait, content.heroImage);
   if (content.heroImage) $('.portrait-label').hidden = true;
   layout.forEach((l, i) => {
@@ -82,7 +89,7 @@
     shells: $$('.floating-shell'), heroCopy: $('.hero-bottom-copy'),
     heroMeta: ['.hero-coordinate','.corner-card','.scroll-prompt','.portrait-label'].map(s => $(s)),
     heroContours: $('.hero-contours'), messageContours: $('.message-contours'),
-    marquees: $$('.message-marquee'), marqueeGroup: $('.message-marquees'),
+    marqueeGroup: $('.message-marquees'),
     messageEyebrow: $('.message-eyebrow'), messageFooter: $('.message-footer'),
     galleryContours: $('.gallery-contours'), counter: $('#moment-counter'),
     splitPortraits: $$('.split-portrait'), splitOptions: $('.split-options'),
@@ -231,10 +238,6 @@
     ui.messageContours.style.transform=`translate3d(${-px*18}px,${py*-12}px,0) rotate(${(t-3)*.8}deg)`;
     const messageText=smooth(range(t,2.1,2.9))*(1-messageOut);
     ui.marqueeGroup.style.opacity=messageText;
-    ui.marquees.forEach((row,i)=>{
-      const direction=i?1:-1;
-      row.style.transform=`translate3d(calc(${i?-35:-15}% + ${direction*((t-3.35)*170+px*55)}px),${py*(i?10:-8)}px,0)`;
-    });
     ui.messageEyebrow.style.opacity=smooth(range(t,2.35,2.9))*(1-messageOut);
     ui.messageFooter.style.opacity=messageText;
     const draw=smooth(range(t,2.5,3.35));
