@@ -23,7 +23,7 @@
   return `<div class="mb-playtest-gallery" aria-label="试玩照片">${items.map((item,i)=>`<figure class="mb-playtest-photo" data-playtest-slot="${i}">${item.image?`<button class="mb-image-button" data-money-image="${esc(item.image)}" data-caption="${esc(item.title+' · '+item.caption)}" aria-label="放大查看：${esc(item.title)}"><img src="${esc(item.image)}" alt="${esc(item.title)}" width="1600" height="1067" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button>`:`<div class="mb-playtest-empty" role="img" aria-label="${esc(item.title)}照片预留位置"><span class="mono">PHOTO / ${String(i+1).padStart(2,'0')}</span><span class="mb-slot-cross" aria-hidden="true"></span><span>照片待补充</span></div>`}<figcaption><strong>${esc(item.title)}</strong><span>${esc(item.caption)}</span></figcaption></figure>`).join('')}</div>`;
  }
  function demo(){
-  return `<div class="mb-demo" aria-label="投打预测机制演示"><div class="mb-demo-top"><span class="mono">INTERACTIVE / 固定示例</span><h3>同一个标记，你会怎样回应？</h3><p>为了说明机制，你可以预设球路；实际比赛中，投手会暗选球种。</p></div><div class="mb-demo-body"><div class="mb-demo-grid" aria-label="投打格子示意"></div><div class="mb-demo-controls"><fieldset><legend>球路示例</legend><label><input type="radio" name="mb-pitch" value="straight" checked>位置不变</label><label><input type="radio" name="mb-pitch" value="drop">向下移动一格</label></fieldset><fieldset><legend>打击覆盖</legend><label><input type="radio" name="mb-cover" value="3" checked>三格 · 覆盖更多位置</label><label><input type="radio" name="mb-cover" value="1">一格 · 冒险争取得分</label></fieldset><div class="mb-demo-status" aria-live="polite" aria-atomic="true"></div></div></div><div class="mb-demo-steps" aria-label="演示步骤"><button data-mb-step="0" aria-pressed="true"><span>01</span>展示标记</button><button data-mb-step="1" aria-pressed="false"><span>02</span>打者回应</button><button data-mb-step="2" aria-pressed="false"><span>03</span>揭晓结果</button></div><div class="mb-demo-legend"><span><i class="mb-key-zone"></i>中央九格好球区</span><span><i class="mb-key-cover"></i>打击覆盖</span><span><i class="mb-key-ball"></i>最终落点</span></div></div>`;
+  return `<div class="mb-demo" aria-label="投打预测机制演示"><div class="mb-demo-top"><span class="mono">INTERACTIVE / 固定示例</span><h3>同一个标记，你会怎样回应？</h3><p>为了说明机制，你可以预设球路；实际比赛中，投手会暗选球种。</p></div><div class="mb-demo-body"><div class="mb-demo-grid" aria-label="投打格子示意"></div><div class="mb-demo-controls"><fieldset><legend>球路示例</legend><label><input type="radio" name="mb-pitch" value="straight" checked>位置不变（快速球）</label><label><input type="radio" name="mb-pitch" value="drop">向下移动一格（曲球）</label></fieldset><fieldset><legend>打击覆盖</legend><label><input type="radio" name="mb-cover" value="3" checked>三格 · 覆盖更多位置</label><label><input type="radio" name="mb-cover" value="1">一格 · 冒险争取得分</label></fieldset><div class="mb-demo-status" aria-live="polite" aria-atomic="true"></div></div></div><div class="mb-demo-steps" aria-label="演示步骤"><button data-mb-step="0" aria-pressed="true"><span>01</span>展示标记</button><button data-mb-step="1" aria-pressed="false"><span>02</span>打者回应</button><button data-mb-step="2" aria-pressed="false"><span>03</span>揭晓结果</button></div><div class="mb-demo-legend"><span><i class="mb-key-zone"></i>中央九格好球区</span><span><i class="mb-key-cover"></i>打击覆盖</span><span><i class="mb-key-ball"></i>最终落点</span></div></div>`;
  }
  function render({pagination}){
   const extra=(label,body)=>`<details class="mb-process-details"><summary>${label}<span aria-hidden="true">＋</span></summary>${body}</details>`;
@@ -35,7 +35,7 @@
     <p class="mb-intro">我喜欢棒球里上一球失误后，下一球还能重新判断的过程。Money Ball 把投球、挥棒和守备拆成桌面步骤：玩家看见投手的标记，猜测尚未公开的球种，再决定要不要挥棒。球员卡采用我的校队队友形象；我在这个项目中投入最多的是机制设计与卡牌构筑。</p>
     <dl class="mb-facts"><div><dt>类型 / 人数</dt><dd>棒球策略桌游 / 2 人</dd></div><div><dt>当前时长</dt><dd>约 25–30 分钟</dd></div><div><dt>开发时间</dt><dd>2025.02 — 06</dd></div><div><dt>个人工作</dt><dd>机制、卡牌、规则、美术与印刷<br>Photoshop / Word</dd></div></dl>
     <div class="mb-hero-cover">${photo(2,'Money Ball 开箱总览，包含图板、卡牌、筹码和可擦写笔','实体原型 · 图板记录比赛，卡牌决定选择，可擦写笔用于标记投打位置')}</div>
-    <div class="mb-reading-links"><button data-section="moneyOrigin">先看桌面上有什么 ↓</button><button data-section="moneyRules">了解一球怎样进行 ↓</button></div>
+    <div class="mb-reading-links"><button data-section="moneyOrigin">桌游物件</button><button data-section="moneyRules">投打规则</button></div>
    </section>
    ${section('moneyOrigin','02','ON THE TABLE','游戏发生在这张桌面上','一人进攻、一人防守。图板记录全队的局面，格子卡处理当前这一球。',`
     ${photo(16,'游玩图板，展示守备位置、垒包、好坏球和出局数以及事件卡区','原型图板 · 先安排守备位置，再在比赛中移动跑者、记录球数','mb-board')}
@@ -55,17 +55,17 @@
     </ol>
     <div class="mb-game-loop"><h3>什么时候换打者、换边、结束比赛？</h3><ol><li><strong>3 好球 → 三振出局；4 坏球 → 保送上一垒。</strong><p>击球被成功守备也会出局。当前打者结束打席，按棒次换下一名打者，好坏球重新累计。</p></li><li><strong>3 名打者出局 → 交换攻守。</strong><p>双方各进攻一次，才算完成一局。图板上的垒包用于追踪进攻方跑者的推进。</p></li><li><strong>最后三局结束 → 比较得分。</strong><p>普通安打靠队友接续推进得分；一格命中的全垒打，让该打者直接得分。</p></li></ol></div>
    `)}
-   ${section('moneyPrediction','04','PITCHING & BATTING','这套投打规则，给玩家什么选择？','起始标记公开，球种仍隐藏。同一条线索可以有不同答案，打者需要先决定，再接受揭牌结果。',`
+   ${section('moneyPrediction','04','PITCHING & BATTING','投打规则下，不同玩家的选择','起始标记公开，球种仍隐藏。同一条线索可以有不同答案，打者需要先决定，再接受揭牌结果。',`
     ${demo()}
     <div class="mb-prose"><h3>标记提供线索，球种保留变化</h3><p>如果投手直接公开最终落点，打者只要照着画格子。因此，这套规则先公开起始标记，最后再揭球种：同一个标记，可以留在原位，也可能因球种移动。</p><p>前几球也会影响判断。同样的标记上次用了变化球，这次会不会重复？投手同样可以利用打者已经形成的预期。</p></div>
     ${extra('展开投打顺序与球路图解',photo(5,'展示标记、打者回应、揭晓球种的三阶段流程图','图解 A · 展示标记 → 打者回应 → 揭牌结算','mb-diagram')+photo(7,'相同起始标记在位置不变和下移球路中的落点差异','图解 B · 球种决定最终落点，实际变化按球种与技能结算','mb-diagram'))}
     ${pair(8,9,'球种卡正面及变化效果','球种卡背面的棒球符号','球种卡正面 · 阅读变化效果','球种卡背面 · 扣住时保留隐藏信息')}
     <div class="mb-subsection"><h3>画三格还是一格，收益也不同</h3><div class="mb-risk"><div><strong>三格</strong><p>覆盖更多可能落点，争取先击中。</p><p>命中后仍要经过守备判定，相关球员全部失败才形成安打。</p></div><div><strong>一格</strong><p>只赌一个位置，要求更精确的预测。</p><p>一旦命中，直接全垒打，该打者得 1 分，不经过普通守备判定。</p></div></div>
     ${extra('查看覆盖范围图解与击球卡原型',photo(10,'三格与一格打击覆盖的风险收益对比','图解 C · 覆盖范围与命中收益','mb-diagram')+pair(11,12,'击球卡正面，包含旧版四格文字','击球卡背面的球棒符号','击球卡正面 · 打击、触击与选球','击球卡背面 · 球棒符号区分用途'))}
-    ${note('原型版本差异','卡面仍有旧版“四格”文字。当前规则为最多三个相连格子，实体卡面仍待更新；页面保留照片原貌。')}</div>
+    </div>
     <div class="mb-subsection"><h3>球数会改变同一个选择的代价</h3><div class="mb-scenario"><h4>例如：两好球，三坏球</h4><p>再一次好球就三振，再一次坏球就保送。投手展示好球区下沿的标记：球可能留在框内，也可能移到框外。</p><p><strong>不挥棒</strong>：框外球带来保送，框内球却让打者三振。<br><strong>挥棒</strong>：猜中落点有机会击出；猜错即使落在框外，也会因挥空而三振。</p></div><p class="mb-prose">我希望前几球留下的经验能进入下一次判断。球数改变了失败的代价，同一个标记就不再只有一种应对。</p>${extra('复查好坏球的判定图',photo(13,'挥空记好球，不挥棒按最终落点判定好坏球','图解 D · 好坏球在揭牌得到最终落点后结算','mb-diagram'))}</div>
    `)}
-   ${section('moneyDefense','05','DEFENSE & LINEUP','为什么击中了，还要看由谁守备？','球员卡提供不同的位置、守备力和技能。把谁放在哪里，会改变普通击球之后能否安全上垒。',`
+   ${section('moneyDefense','05','DEFENSE & LINEUP','击中后，场上球员的守备判定','球员卡提供不同的位置、守备力和技能。把谁放在哪里，会改变普通击球之后能否安全上垒。',`
     <div class="mb-prose"><p>一格命中直接全垒打。其余普通击中，需要先按击球方向和击球卡规则，找到相应守备球员；每名相关球员掷六面骰，<strong>骰子点数 ≤ 当前守备力，就守备成功</strong>。</p></div>
     <ol class="mb-defense-flow"><li>确定方向与相关球员</li><li>读取球员卡上的守备力与技能</li><li>掷骰，比较当前守备力</li></ol><div class="mb-outcomes"><div><b>至少一人守备成功</b><p>击球员出局</p></div><div><b>全部守备失败</b><p>形成安打，安全上垒</p></div></div>
     <div class="mb-roster-example"><span class="mb-chapter mono">判定示例 / 数值仅用于说明，非具体卡牌数据</span><h3>同样掷出 3，换一个球员，结果就不同</h3><div class="mb-example-lines"><p><strong>当前守备力 2</strong><span>3 ＞ 2 → 该球员守备失败</span></p><p><strong>当前守备力 4</strong><span>3 ≤ 4 → 该球员守备成功</span></p></div><p>若这一方向只有一名相关守备球员，前一种情况形成安打，后一种情况让打者出局。若有多人参与，则必须所有相关球员都失败，才形成安打。</p></div>
@@ -73,23 +73,22 @@
     <div class="mb-prose"><h3>阵容调整因此有了实际用途</h3><p>玩家不仅要判断这一球能否击中，也要留意它会打向哪里、那里由谁守备。防守方在每个攻守回合开始时，可以调整位置或换上一名替补；替补接替原来的棒次。调整后，该方向参与判定的球员和能力也会变化。</p><p>球员卡来自我的校队，但我希望他们在游戏里也有不同作用。守备力与技能让“选谁上场”产生规则上的后果，而不只是在图板上换一张照片。</p></div>
     ${extra('查看守备分支与跑垒得分图解',photo(14,'普通击中后，依据相关球员守备力决定出局或安打','图解 E · 普通击中后的守备分支；一格命中不走这一流程','mb-diagram')+photo(15,'一垒打时打者与垒上队友的推进路径','图解 F · 一垒打：打者上一垒，队友各推进一垒；回本垒得分','mb-diagram'))}
    `)}
-   ${section('moneySimplification','06','RULE ITERATION','九局太长，我保留最后三局','每球都要画格子、出牌、揭牌和结算。早期九局版约一个半小时，操作重复让整场比赛太长。',`
+   ${section('moneySimplification','06','RULE ITERATION','为什么只有最后三局','每球都要画格子、出牌、揭牌和结算。早期九局版约一个半小时，操作重复让整场比赛太长。',`
     <div class="mb-time-change"><div><span class="mono">早期 / 九局</span><strong>约 90<small>分钟</small></strong></div><span aria-hidden="true">→</span><div><span class="mono">当前 / 最后三局</span><strong>25–30<small>分钟</small></strong></div></div>
     <div class="mb-prose"><p>我把故事放到 Game 7 第七局，让玩家直接进入决胜阶段。逐球试探仍然保留，减少的是整场重复操作的次数。代价是长线轮换空间变小，所以当前保留一名替补。</p><p>另一项取舍是没有加入左投对左打的额外克制加成。左右手仍是角色特点，玩家不必先记住这类关系，才能参与标记、球种与覆盖范围的判断。</p><h3>还需要验证什么？</h3><p>比赛变短，不等于试探一定充分。我还需要检查：三局是否足够玩家发现对手习惯，以及替补是否给阵容应对留下了足够空间。</p></div>
     <div class="mb-pending"><span class="mono">过程材料待补充</span><p>九局版与三局版规则、卡牌草稿和修改记录，将与具体改动一同展示；目前不把尚未整理的材料作为验证结论。</p></div>
    `)}
-   ${section('moneyMaterial','07','PHYSICAL PROTOTYPE','卡片先告诉玩家，它用来做什么','我独立完成机制、卡牌内容、规则、美术与印刷。制作实体时，先区分卡片用途，再组织正面的具体效果。',`
+   ${section('moneyMaterial','07','PHYSICAL PROTOTYPE','卡牌UI的意思','我独立完成机制、卡牌内容、规则、美术与印刷。制作实体时，先区分卡片用途，再组织正面的具体效果。',`
     <ul class="mb-component-list"><li><strong>棒球符号 → 球种卡</strong><span>暗选球路，揭牌时确定变化。</span></li><li><strong>球棒符号 → 击球卡</strong><span>选择打击、触击或选球。</span></li><li><strong>黄底感叹号 → 事件卡</strong><span>打席开始时公开的临时条件。</span></li></ul>
     ${pair(17,18,'事件卡正面的名称、示意图与规则文字','黄底感叹号主题的事件卡背面','事件卡正面 · 临时效果','事件卡背面 · 先辨认类型')}
     <div class="mb-prose"><p>卡背负责让玩家在整理、取牌时分清用途；正面再解释效果。事件卡先公开，双方才知道这一打席有什么变化，然后进入投打选择。</p><h3>让校队经历落在具体人物上</h3><p>球员卡保留队友的照片、姓名、位置与能力；经理卡以球队经理为原型，延续球队标志。它们让这套原型与我的棒球经历保持联系。</p></div>
     ${extra('查看经理卡与封面盒',pair(19,20,'以球队经理为原型的经理卡正面','球队标志主题的经理卡背面','经理卡正面 · 真实人物形象','经理卡背面 · 延续球队标志')+photo(1,'Money Ball 手工封面盒','封面盒实拍 · 手工制作的实体原型'))}
    `)}
-   ${section('moneyTesting','08','PLAYTEST & REFLECTION','试玩中看到了什么，还缺什么证据？','四轮当面双人测试，参与者分别有不同的棒球知识和桌游经验。',`
+   ${section('moneyTesting','08','PLAYTEST & REFLECTION','测试','四轮当面双人测试，参与者分别有不同的棒球知识和桌游经验。',`
     ${table(['轮次','参与者','了解棒球','玩过桌游'],[['01','两名队友','是','是'],['02','两名队友','是','否'],['03','两名同学','否','是'],['04','两名同学','否','否']])}
     <p class="mb-playtest-intro">真实试玩照片尚未提供，以下四处为照片预留位置。</p>${playtestGallery()}
     <div class="mb-test-findings"><div><h3>观察：前几球会进入后面的判断</h3><p>试玩时，玩家会带着前几个打席的印象，判断对方的投球习惯。</p><p class="mb-caveat">这还不能说明每位玩家都形成了有效预测。下一轮请玩家在揭牌前说明理由，记录他们到底用了哪些线索。</p></div><div><h3>观察：缩短整场，不等于每球都流畅</h3><p>当前一场约 25–30 分钟，一般打席约一分钟，连续擦棒时会更长。</p><p class="mb-caveat">下一轮单独记录较长打席，区分玩家在试探对手、确认规则，还是重复结算；这些等待需要分别处理。</p></div></div>
     <div class="mb-prose"><h3>我从这个项目学到的事</h3><p>把棒球做成桌游，需要决定哪些动作值得拆开、哪些细节应该缩短。我现在会沿着玩家的操作检查规则：先知道什么，再决定什么，最后怎样影响球场局面。</p><p>玩家会猜对手习惯，是值得继续观察的现象；它是否稳定、有趣，还需要更具体的试玩记录。脚本模拟可以辅助检查数值，面对面观察则帮助我了解玩家怎样使用规则。</p></div>
-    <div class="mb-next"><h3>下一步</h3><ul><li>更新旧版四格卡面，与当前三格规则统一。</li><li>记录三局内玩家如何形成、修正对手印象。</li><li>补齐真实试玩照片、讲解视频、定稿规则书及版本记录。</li></ul><p class="mb-source-note">内容与实拍整理自《Money Ball 项目页大纲与流程图解》。网页中的固定演示和数值示例仅用于解释规则，不作为真实试玩结果。</p></div>
    `)}
    ${pagination}<footer class="mb-simple-footer" data-detail-section="footer"><span>XU KE / Money Ball</span><nav aria-label="页尾导航"><a href="#intro" data-footer-home>HOME</a><a href="#work" data-open-page="work">专业作品</a><a href="#life" data-open-page="life">日常生活</a></nav></footer></article>`;
  }
