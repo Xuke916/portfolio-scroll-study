@@ -169,8 +169,8 @@
   function render(y){
     if(!metrics||route==='home')return;
     const {h,w,sections:s}=metrics;
-    document.documentElement.style.setProperty('--header-color',menuPaused?'#f3f3eb':route==='life'?'#0a2447':'#f3f3eb');
-    if(ui.footerPhoto)ui.footerPhoto.style.transform=`translate3d(${mouseX*8}px,${mouseY*5}px,0)`;
+    document.documentElement.style.setProperty('--header-color',menuPaused?'#f3f3eb':(route==='life'||ui.caseStudy)?'#0a2447':'#f3f3eb');
+    if(ui.footerPhoto&&!ui.caseStudy)ui.footerPhoto.style.transform=`translate3d(${mouseX*8}px,${mouseY*5}px,0)`;
     if(ui.kind==='project'){
       if(!ui.caseStudy)ui.projectCover.style.transform=`translate3d(0,${clamp(y/h)*22}px,0)`;
       ui.sectionButtons.forEach((button,i)=>{const section=s[button.dataset.section],next=ui.sectionButtons[i+1];const active=ui.caseStudy?(y>=section.anchor-2||i===0)&&(!next||y<s[next.dataset.section].anchor-2):y>=section.start-h*.2&&y<section.start+section.length-h*.2;button.classList.toggle('active',active);if(active){button.setAttribute('aria-current','step');if(ui.caseStudy&&ui.activeToc!==button.dataset.section){ui.activeToc=button.dataset.section;ui.toc.scrollTop=Math.max(0,button.offsetTop-ui.toc.clientHeight/2+button.offsetHeight/2);}}else button.removeAttribute('aria-current');});
@@ -253,7 +253,7 @@
     if(push)history.pushState({page:to},'',to==='home'?'#'+chapter:'#'+to);
     const caption=routeCaption(to);
     $('.route-transition-caption').textContent=caption;
-    if(immediate||reduced.matches){
+    if(immediate||reduced.matches||to==='work/project-03'||route==='work/project-03'){
       applyRoute(to,{chapter,restore,projectIndex});finish(chapter);return;
     }
     overlay.hidden=false;let started=null,switched=false;
