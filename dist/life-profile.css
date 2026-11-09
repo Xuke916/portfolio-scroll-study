@@ -1,0 +1,36 @@
+.has-life-profile .detail-object,.has-life-profile .detail-hero-scribble{visibility:hidden}
+.has-life-profile .detail-top-label{top:20%;left:9%}
+.has-life-profile .detail-hero-title{left:9%;top:26%;font-size:clamp(68px,8.5vw,145px);line-height:.95;letter-spacing:-.06em}
+.has-life-profile .detail-hero-copy{left:50%;top:29%;width:37%;max-width:550px}
+.has-life-profile .detail-copy-kicker{font-size:10px;letter-spacing:.1em}
+.life-hero-intro{font-size:17px;line-height:1.95;color:#294664;margin:19px 0 28px;overflow-wrap:anywhere}
+.has-life-profile .detail-facts{border-color:#b8cde2;border-radius:0}
+.has-life-profile .detail-facts>div{padding:15px 12px;min-height:105px;gap:12px}
+.has-life-profile .detail-facts .mono{font-size:10px;line-height:1.75;color:#536b89}
+.has-life-profile .detail-facts b{font-size:27px;line-height:1.25;color:#174774}
+.life-about{width:min(1040px,82%);margin:0 auto;padding:145px 0 80px;border-top:1px solid #b8cde266;color:#0a2447}
+.life-about header{margin-bottom:40px}.life-about header>.mono{font-size:10px;color:#607995;letter-spacing:.1em}
+.life-about h2{font-size:42px;line-height:1.4;font-weight:600;letter-spacing:-.03em;margin:15px 0}
+.life-about header>p{font-size:17px;line-height:1.85;color:#536b89;margin:0}
+.life-about-columns{display:grid;grid-template-columns:1fr 1fr;gap:65px}
+.life-about h3{font-size:23px;font-weight:500;line-height:1.5;margin:0 0 16px}
+.life-about ol{list-style:none;padding:0;margin:0}.life-about ol>li{padding:22px 0;border-top:1px solid #b8cde266}
+.life-about ol .mono{font-size:11px;line-height:1.8;color:#607995;letter-spacing:0}
+.life-about h4{font-size:19px;font-weight:500;line-height:1.5;margin:9px 0}.life-about h4 a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-decoration-color:#1e90ff;text-underline-offset:5px}
+.life-about p{font-size:15px;line-height:1.9;color:#405b77;margin:0;overflow-wrap:anywhere}
+.life-about-notes{display:grid;grid-template-columns:1.2fr 1fr;gap:65px;border-top:1px solid #1e90ff;margin-top:26px;padding-top:30px}
+.life-about-notes h3{font-size:18px;margin-bottom:13px}.life-about-notes p{font-size:13px;line-height:1.95}
+.life-about-notes ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:9px 18px;font-size:13px;line-height:1.8;color:#405b77}
+@media(max-width:900px){
+ .has-life-profile .detail-hero-title{left:8%;font-size:13vw;top:29%}.has-life-profile .detail-hero-copy{left:49%;width:41%;top:28%}.life-hero-intro{font-size:16px}.has-life-profile .detail-facts>div{padding:12px 8px;min-height:96px}.has-life-profile .detail-facts .mono{font-size:9px}.has-life-profile .detail-facts b{font-size:24px}.life-about-columns,.life-about-notes{gap:35px}
+}
+@media(max-width:600px){
+ .has-life-profile .detail-top-label{top:17%;left:8%}
+ .has-life-profile .detail-hero-title{left:8%;top:21%;font-size:18vw;line-height:.9}
+ .has-life-profile .detail-hero-copy{left:8%;top:47%;width:84%;max-width:none}.has-life-profile .detail-copy-kicker{font-size:9px}.life-hero-intro{font-size:15px;line-height:1.9;margin:13px 0 21px}
+ .has-life-profile .detail-facts>div{padding:11px 9px;min-height:86px;gap:8px}.has-life-profile .detail-facts .mono{font-size:9px;line-height:1.65}.has-life-profile .detail-facts b{font-size:23px}
+ .has-life-profile .detail-scroll{font-size:10px;bottom:28px}
+ .life-about{width:82%;padding:140px 0 60px}.life-about header{margin-bottom:28px}.life-about h2{font-size:32px}.life-about header>p{font-size:15px}.life-about-columns,.life-about-notes{grid-template-columns:1fr;gap:30px}.life-about h3{font-size:21px}.life-about h4{font-size:18px}.life-about ol>li{padding:20px 0}.life-about p{font-size:14px}.life-about-notes h3{font-size:18px}.life-about-notes{padding-top:25px;margin-top:10px}.life-about-notes p,.life-about-notes ul{font-size:13px}
+}
+@media(max-width:600px) and (max-height:650px){.has-life-profile .detail-facts,.has-life-profile .detail-top-label{display:none}.has-life-profile .detail-hero-title{top:24%;font-size:16vw}.has-life-profile .detail-hero-copy{top:49%}.life-hero-intro{font-size:14px;line-height:1.85}}
+@media(max-height:500px) and (min-width:601px){.has-life-profile .detail-hero-title{top:31%;font-size:9vw}.has-life-profile .detail-hero-copy{top:25%;left:48%;width:42%}.life-hero-intro{font-size:13px;line-height:1.8;margin:10px 0}.has-life-profile .detail-facts>div{min-height:70px;padding:8px}.has-life-profile .detail-facts .mono{font-size:8px}.has-life-profile .detail-facts b{font-size:20px}}

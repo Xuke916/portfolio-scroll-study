@@ -87,37 +87,43 @@
   function sculpture() {
     return `<svg viewBox="0 0 620 720" role="img" aria-label="主视觉图片占位"><defs><radialGradient id="object-blue" cx=".32" cy=".18" r=".87"><stop stop-color="#366ba6"/><stop offset=".42" stop-color="#183858"/><stop offset=".8" stop-color="#0c1929"/><stop offset="1" stop-color="#060b12"/></radialGradient><linearGradient id="object-edge" x1="0" x2="1"><stop stop-color="#1e90ff"/><stop offset="1" stop-color="#1e90ff" stop-opacity="0"/></linearGradient></defs><path d="M55 430C28 220 110 65 286 53c173-13 273 120 264 295l-5 233-150 87-222-34-102-95Z" fill="url(#object-blue)" stroke="#6287af" stroke-opacity=".3"/><path d="M76 360c83-44 194-66 315-39l139 65-9 86-146-40-286 7Z" fill="#080f1b" stroke="#2579cf" stroke-opacity=".7"/><path d="M57 428c137 25 300-25 492 103M81 538c103 6 205 5 312 129M134 109c-55 167-6 367 103 537M240 58c-83 215-12 418 70 595M377 67c-45 130 12 316 126 547M477 155c-43 133-15 297 61 389M74 268c100-57 276-66 445 26M66 206c108-74 250-92 415 19M69 493c97 33 308 14 475 97" fill="none" stroke="#6b9bd1" stroke-width="1" opacity=".28"/><path d="M61 431c-29-208 52-359 225-372" fill="none" stroke="url(#object-edge)" stroke-width="3"/><path d="m174 526 164 7 56 44-169-18Z" fill="#102b4b" stroke="#3e6c9c"/><circle cx="408" cy="490" r="19" fill="#05090f" stroke="#34597e"/><circle cx="408" cy="490" r="9" fill="none" stroke="#71a9dc"/><path d="m114 587 88 24m12 4 88 24m13 4 38 11" stroke="#1e90ff" stroke-width="3" opacity=".55"/><text x="280" y="258" text-anchor="middle" fill="#7197be" font-family="monospace" font-size="12" letter-spacing="3">IMAGE / 01</text><path d="M280 160v30m-15-15h30" stroke="#8fb9e3" opacity=".6"/></svg>`;
   }
+  function lifeProfile(profile) {
+    const entries=items=>items.map(item=>`<li><span class="mono">${esc(item.date)}</span><h4>${item.route?`<a href="#${esc(item.route)}" data-project-route="${esc(item.route)}">${esc(item.title)} ↗</a>`:esc(item.title)}</h4><p>${esc(item.text)}</p></li>`).join('');
+    return `<section class="detail-section life-about" data-detail-section="profile" aria-labelledby="life-about-heading"><header><span class="mono">02 / ABOUT ME</span><h2 id="life-about-heading">关于我</h2><p>学习、做游戏，以及球场上的日常。</p></header><div class="life-about-columns"><section><h3>学习与经历</h3><ol>${entries(profile.background)}</ol></section><section><h3>我的创作</h3><ol>${entries(profile.creative)}</ol></section></div><div class="life-about-notes"><div><h3>创作记录</h3><p>${esc(profile.recognition)}</p></div><div><h3>常用工具</h3><ul>${profile.tools.map(tool=>`<li>${esc(tool)}</li>`).join('')}</ul></div></div></section>`;
+  }
   function build(name) {
     data = window.PORTFOLIO_CONTENT.pages[name];
     const projects = data.projects;
+    const profile = name === 'life' ? data.profile : null;
     const hasStatement = data.showStatement !== false, hasCollage = data.showGallery !== false, coverOnly = data.projectLayout === 'covers';
     const sections = [
-      ['hero', '开场'], ...(hasStatement ? [['story', '创作介绍']] : []),
+      ['hero', '开场'], ...(profile ? [['profile', '关于我']] : []), ...(hasStatement ? [['story', '创作介绍']] : []),
       ...(hasCollage ? [['collage', data.galleryTitle]] : []),
       ['projects', data.projectsTitle]
     ];
     root.innerHTML = `
       <button class="detail-back mono" data-return>↖ 返回入口</button>
       <nav class="detail-section-nav" id="detail-section-navigation" aria-label="内页章节">${sections.map(([id,label],i)=>`<button data-section="${id}" aria-label="${esc(label)}" class="${i===0?'active':''}"><i></i><span>${String(i+1).padStart(2,'0')}</span></button>`).join('')}</nav>
-      <article class="detail-route" data-route="${name}" data-project-layout="${coverOnly?'covers':'collage'}">
+      <article class="detail-route${profile?' has-life-profile':''}" data-route="${name}" data-project-layout="${coverOnly?'covers':'collage'}">
         <section class="detail-section detail-hero" data-detail-section="hero">
           <div class="detail-sticky detail-hero-view">
             <span class="detail-top-label mono">${esc(data.english)} / 2026</span>
             <h1 class="detail-hero-title" tabindex="-1"><em>${esc(data.title[0])}</em><strong>${esc(data.title[1])}</strong></h1>
             <svg class="detail-hero-scribble" viewBox="0 0 900 600" aria-hidden="true"><path d="M80 510C-70 580 250 190 415 150S840 15 725 210L462 513 535 282 330 558 649 30"/></svg>
             <div class="detail-object">${data.heroImage ? media(data.heroImage, 'IMAGE / 01', 'detail-object-image') : sculpture()}<span class="mono detail-object-note">${esc(data.mark)} / VISUAL PLACEHOLDER</span></div>
-            <div class="detail-hero-copy"><div class="detail-meta mono"><span>PORTFOLIO / 2026</span><span>${esc(data.english)}</span><span>IMAGE / 01</span></div><span class="detail-copy-kicker mono">ABOUT / TEXT PLACEHOLDER</span><div class="detail-copy-lines" aria-label="简介文字占位"><i></i><i></i><i></i><i></i></div><svg class="detail-small-signature" viewBox="0 0 100 38" aria-hidden="true"><path d="m3 28 50-21-29 26L68 6 46 30l42-16-21 21M8 27l83-4"/></svg><div class="detail-facts"><div><span class="mono">PROJECT / 01</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div><div><span class="mono">PROJECT / 02</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div><div><span class="mono">PROJECT / 03</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div></div></div>
+            <div class="detail-hero-copy">${profile?`<span class="detail-copy-kicker mono">ABOUT / ${esc(profile.name)}</span><p class="life-hero-intro">${esc(profile.intro)}</p><div class="detail-facts">${profile.facts.map(fact=>`<div><span class="mono">${esc(fact.label)}</span><b>${esc(fact.value)}</b><span class="mono">${esc(fact.detail)}</span></div>`).join('')}</div>`:`<div class="detail-meta mono"><span>PORTFOLIO / 2026</span><span>${esc(data.english)}</span><span>IMAGE / 01</span></div><span class="detail-copy-kicker mono">ABOUT / TEXT PLACEHOLDER</span><div class="detail-copy-lines" aria-label="简介文字占位"><i></i><i></i><i></i><i></i></div><svg class="detail-small-signature" viewBox="0 0 100 38" aria-hidden="true"><path d="m3 28 50-21-29 26L68 6 46 30l42-16-21 21M8 27l83-4"/></svg><div class="detail-facts"><div><span class="mono">PROJECT / 01</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div><div><span class="mono">PROJECT / 02</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div><div><span class="mono">PROJECT / 03</span><b>—</b><span class="mono">CONTENT PLACEHOLDER</span></div></div>`}</div>
             <button class="detail-scroll mono" data-section="${sections[1][0]}">SCROLL TO EXPLORE <span>↓</span></button>
           </div>
         </section>
+        ${profile ? lifeProfile(profile) : ''}
         ${hasStatement ? `<section class="detail-section detail-story" data-detail-section="story"><div class="detail-sticky">
-          <span class="detail-section-kicker mono">02 / ${name === 'work' ? 'CREATIVE STATEMENT' : 'LIFE IN MOTION'}</span>
+          <span class="detail-section-kicker mono">${String(sections.findIndex(([id])=>id==='story')+1).padStart(2,'0')} / ${name === 'work' ? 'CREATIVE STATEMENT' : 'LIFE IN MOTION'}</span>
           <div class="detail-story-type" aria-label="标题内容占位">${data.statement.map((line, i) => `<span class="story-line story-line-${i}">${esc(line)}</span>`).join('')}</div>
           <div class="detail-statement-media">${media(data.statementImage, 'IMAGE / 02')}<span class="mono">TEXT / IMAGE PLACEHOLDER</span></div>
           <span class="detail-story-bottom mono">SCROLL TO REVEAL ↓</span>
         </div></section>` : ''}
         ${hasCollage ? `<section class="detail-section detail-collage" data-detail-section="collage"><div class="detail-sticky">
-          <span class="detail-section-kicker mono">03 / SELECTED VISUALS</span><h2 class="detail-collage-heading"><em>${esc(data.galleryTitle.slice(0, 2))}</em><strong>${esc(data.galleryTitle.slice(2))}</strong></h2>
+          <span class="detail-section-kicker mono">${String(sections.findIndex(([id])=>id==='collage')+1).padStart(2,'0')} / SELECTED VISUALS</span><h2 class="detail-collage-heading"><em>${esc(data.galleryTitle.slice(0, 2))}</em><strong>${esc(data.galleryTitle.slice(2))}</strong></h2>
           ${[0, 1, 2, 3].map((i) => `<figure class="detail-collage-card collage-${i}">${media(projects[i % projects.length].detailImage || projects[i % projects.length].image, 'IMAGE / '+String(i+3).padStart(2,'0'))}<figcaption class="mono">VISUAL / ${String(i+1).padStart(2,'0')}</figcaption></figure>`).join('')}
           <button class="detail-collage-next mono" data-section="projects">${esc(data.projectsTitle)} ↘</button>
         </div></section>` : ''}
@@ -141,6 +147,10 @@
       sectionButtons: $$('.detail-section-nav button',root), viewport: $('.project-viewport',root),footerPhoto:$('.footer-portrait',root)
     };
     measure();
+    if(profile&&typeof ResizeObserver!=='undefined'){
+      projectObserver=new ResizeObserver(()=>{if(route==='life'){measure();if(jump?.section)target=jump.to=metrics.sections[jump.section].start;render(position);}});
+      projectObserver.observe($('.life-about',root));
+    }
   }
   function measure() {
     if(!ui)return;
@@ -159,8 +169,8 @@
     let offset=0;metrics={h,w,mobile,panelWidth,travel,sections:{}};
     for(const el of ui.sections){
       const name=el.dataset.detailSection;
-      const length=name==='footer'?Math.max(spans[name],parseFloat(getComputedStyle(el).minHeight)||0):spans[name];
-      metrics.sections[name]={start:offset,length};el.style.height=length+'px';offset+=length;
+      const length=name==='profile'?el.offsetHeight:name==='footer'?Math.max(spans[name],parseFloat(getComputedStyle(el).minHeight)||0):spans[name];
+      metrics.sections[name]={start:offset,length};if(name!=='profile')el.style.height=length+'px';offset+=length;
     }
     metrics.max=Math.max(0,offset-h);
     root.style.setProperty('--project-panel-width',panelWidth+'px');
@@ -294,7 +304,7 @@
     const open=e.target.closest?.('[data-open-page]');
     if(open){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();window.PortfolioPages.open(open.dataset.openPage);return;}
     if(e.target.closest?.('[data-return]')){e.preventDefault();window.PortfolioPages.home();return;}
-    const section=e.target.closest?.('[data-section]');if(section&&route!=='home'&&!busy){if(ui.caseStudy)measure();const destination=metrics.sections[section.dataset.section];scrollToPosition(ui.caseStudy?destination.anchor:destination.start);if(ui.caseStudy&&jump)jump.section=section.dataset.section;return;}
+    const section=e.target.closest?.('[data-section]');if(section&&route!=='home'&&!busy){if(ui.caseStudy||data.profile)measure();const destination=metrics.sections[section.dataset.section];scrollToPosition(ui.caseStudy?destination.anchor:destination.start);if(jump)jump.section=section.dataset.section;return;}
     const dot=e.target.closest?.('[data-project-position]');if(dot&&route!=='home'&&!busy){scrollToPosition(metrics.sections.projects.start+Math.min(Number(dot.dataset.projectPosition)*metrics.panelWidth,metrics.travel)/1.35);return;}
     const project=e.target.closest?.('[data-project-index]');
     if(project&&route!=='home'&&!busy){if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();const item=data.projects[Number(project.dataset.projectIndex)];if(route==='work')transitionTo(projectRoute(item));else{stop();window.PortfolioHome.preview(item.image,item.title+' / 内容待补充');}}
