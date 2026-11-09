@@ -75,10 +75,9 @@
    `)}
    ${section('moneySimplification','06','RULE ITERATION','为什么只有最后三局','每球都要画格子、出牌、揭牌和结算。早期九局版约一个半小时，操作重复让整场比赛太长。',`
     <div class="mb-time-change"><div><span class="mono">早期 / 九局</span><strong>约 90<small>分钟</small></strong></div><span aria-hidden="true">→</span><div><span class="mono">当前 / 最后三局</span><strong>25–30<small>分钟</small></strong></div></div>
-    <div class="mb-prose"><p>我把故事放到 Game 7 第七局，让玩家直接进入决胜阶段。逐球试探仍然保留，减少的是整场重复操作的次数。代价是长线轮换空间变小，所以当前保留一名替补。</p><p>另一项取舍是没有加入左投对左打的额外克制加成。左右手仍是角色特点，玩家不必先记住这类关系，才能参与标记、球种与覆盖范围的判断。</p><h3>还需要验证什么？</h3><p>比赛变短，不等于试探一定充分。我还需要检查：三局是否足够玩家发现对手习惯，以及替补是否给阵容应对留下了足够空间。</p></div>
-    <div class="mb-pending"><span class="mono">过程材料待补充</span><p>九局版与三局版规则、卡牌草稿和修改记录，将与具体改动一同展示；目前不把尚未整理的材料作为验证结论。</p></div>
+    <div class="mb-prose"><p>我把故事放到 Game 7 第七局，让玩家直接进入决胜阶段。逐球试探仍然保留，减少的是整场重复操作的次数。代价是长线轮换空间变小，所以当前保留一名替补。</p><p>另一项取舍是没有加入左投对左打的额外克制加成。左右手仍是角色特点，玩家不必先记住这类关系，才能参与标记、球种与覆盖范围的判断。</p></div>
    `)}
-   ${section('moneyMaterial','07','PHYSICAL PROTOTYPE','卡牌UI的意思','我独立完成机制、卡牌内容、规则、美术与印刷。制作实体时，先区分卡片用途，再组织正面的具体效果。',`
+   ${section('moneyMaterial','07','PHYSICAL PROTOTYPE','卡牌UI','我独立完成机制、卡牌内容、规则、美术与印刷。制作实体时，先区分卡片用途，再组织正面的具体效果。',`
     <ul class="mb-component-list"><li><strong>棒球符号 → 球种卡</strong><span>暗选球路，揭牌时确定变化。</span></li><li><strong>球棒符号 → 击球卡</strong><span>选择打击、触击或选球。</span></li><li><strong>黄底感叹号 → 事件卡</strong><span>打席开始时公开的临时条件。</span></li></ul>
     ${pair(17,18,'事件卡正面的名称、示意图与规则文字','黄底感叹号主题的事件卡背面','事件卡正面 · 临时效果','事件卡背面 · 先辨认类型')}
     <div class="mb-prose"><p>卡背负责让玩家在整理、取牌时分清用途；正面再解释效果。事件卡先公开，双方才知道这一打席有什么变化，然后进入投打选择。</p><h3>让校队经历落在具体人物上</h3><p>球员卡保留队友的照片、姓名、位置与能力；经理卡以球队经理为原型，延续球队标志。它们让这套原型与我的棒球经历保持联系。</p></div>
@@ -87,7 +86,7 @@
    ${section('moneyTesting','08','PLAYTEST & REFLECTION','测试','四轮当面双人测试，参与者分别有不同的棒球知识和桌游经验。',`
     ${table(['轮次','参与者','了解棒球','玩过桌游'],[['01','两名队友','是','是'],['02','两名队友','是','否'],['03','两名同学','否','是'],['04','两名同学','否','否']])}
     <p class="mb-playtest-intro">真实试玩照片尚未提供，以下四处为照片预留位置。</p>${playtestGallery()}
-    <div class="mb-test-findings"><div><h3>观察：前几球会进入后面的判断</h3><p>试玩时，玩家会带着前几个打席的印象，判断对方的投球习惯。</p><p class="mb-caveat">这还不能说明每位玩家都形成了有效预测。下一轮请玩家在揭牌前说明理由，记录他们到底用了哪些线索。</p></div><div><h3>观察：缩短整场，不等于每球都流畅</h3><p>当前一场约 25–30 分钟，一般打席约一分钟，连续擦棒时会更长。</p><p class="mb-caveat">下一轮单独记录较长打席，区分玩家在试探对手、确认规则，还是重复结算；这些等待需要分别处理。</p></div></div>
+    <div class="mb-test-findings"><div><h3>测试观察：根据前几球判断投球习惯</h3><p>试玩时，玩家会带着前几个打席的印象，判断对方的投球习惯。</p></div><div><h3>测试时长：打席时间随对局变化</h3><p>测试中，一场约 25–30 分钟，一般打席约一分钟；连续擦棒时，打席时间会更长。</p></div></div>
     <div class="mb-prose"><h3>我从这个项目学到的事</h3><p>把棒球做成桌游，需要决定哪些动作值得拆开、哪些细节应该缩短。我现在会沿着玩家的操作检查规则：先知道什么，再决定什么，最后怎样影响球场局面。</p><p>玩家会猜对手习惯，是值得继续观察的现象；它是否稳定、有趣，还需要更具体的试玩记录。脚本模拟可以辅助检查数值，面对面观察则帮助我了解玩家怎样使用规则。</p></div>
    `)}
    ${pagination}<footer class="mb-simple-footer" data-detail-section="footer"><span>XU KE / Money Ball</span><nav aria-label="页尾导航"><a href="#intro" data-footer-home>HOME</a><a href="#work" data-open-page="work">专业作品</a><a href="#life" data-open-page="life">日常生活</a></nav></footer></article>`;
