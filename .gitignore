@@ -3,3 +3,21 @@ reference/
 *.tgz
 node_modules/
 .DS_Store
+# Local runtime, credentials, source documents, and development output
+.env
+.env.*
+!.env.example
+.npmrc
+.pnpm-store/
+.sites-runtime/
+.tools/
+outputs/
+private/
+*.log
+*.docx
+*.doc
+*.mkv
+*.pem
+*.key
+credentials*.json
+Thumbs.db
