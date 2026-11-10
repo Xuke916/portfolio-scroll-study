@@ -24,23 +24,25 @@ window.PORTFOLIO_CONTENT = {
       title: ["日常", "生活"], english: "DAILY LIFE", mark: "LIFE",
       profile: {
         name: 'XU KE',
-        intro: '我是 XU KE，中国传媒大学动画专业游戏美术方向在读。我的创作围绕游戏设计与视觉展开，也担任校棒球队副队长。',
+        intro: '我是 XU KE，中国传媒大学动画专业游戏美术方向在读。我做游戏制作、战斗设计与概念美术，也担任校棒球队副队长。',
         facts: [
           { label: '学习', value: '中传', detail: '动画 · 游戏美术' },
           { label: '创作', value: '游戏', detail: '机制与视觉设计' },
           { label: '日常', value: '棒球', detail: '校队副队长' }
         ],
         background: [
-          { date: '2023 — 2027（预计）', title: '中国传媒大学', text: '动画专业，游戏美术方向。' },
-          { date: '2025.12 — 2026.04', title: '网易雷火 · 祝融工作室', text: '战斗策划，参与技能机制、数值平衡与战斗表现设计。' },
+          { date: '2023.09 — 2027.09（预计）', title: '中国传媒大学', text: '动画专业艺术学学士在读，游戏美术方向。' },
+          { date: '2025.06 — 至今', title: 'Absolutely Games · 制作人', text: '为工作室原创动作游戏 Rewinder 获得投资，推进项目制作。' },
+          { date: '2025.12 — 2026.04', title: '网易雷火 · 祝融工作室', text: '担任战斗策划，负责《虹猫蓝兔七侠传》IP 联动双分支终结技能的设计与实现，涵盖机制、数值平衡与表现。与美术、程序协作推进功能上线，并优化击退与赛季饰品的战斗反馈。' },
           { date: '棒球日常', title: '校棒球队副队长', text: '首都棒球赛：2024 年亚军；2025、2026 年季军。' }
         ],
         creative: [
-          { date: '2026.03 起', title: 'Rewinder', text: '六人团队动作游戏，担任制作人，负责概念美术与战斗设计。' },
-          { date: '2025', title: 'Money Ball', text: '从校队经历出发，独立设计并制作双人棒球策略桌游。', route: 'work/project-03' },
-          { date: '2024', title: 'Poro Adventure', text: '作品作为《英雄联盟手游》冬季小游戏上线，获小游戏比赛第一名与最佳 IP 奖。' }
+          { date: '2026.03 — 至今', title: 'Rewinder', text: '受《师父》启发的原创动作游戏。六人团队开发，担任制作人，负责概念美术与战斗设计。' },
+          { date: '2025.02 — 2025.06', title: 'Money Ball', text: '从中国传媒大学棒球队经历出发，独立设计并制作双人棒球竞技桌游。', route: 'work/project-03' },
+          { date: '2024.10 — 2024.12', title: 'Poro Adventure', text: '设计并开发的作品作为《英雄联盟手游》冬季小游戏上线，获小游戏比赛第一名与最佳 IP 奖。' }
         ],
         recognition: '2025、2026 indiePlay 最佳 Game Jam 提名；2025 TapTap Spotlight 优秀作品奖；2025 大广赛 POP MART 企业专项奖。',
+        skills: ['战斗机制', '技能设计', '数值平衡', '场景概念设计'],
         tools: ['Unreal Engine 5', 'Blender', 'Procreate', 'Photoshop', '3DCoat', 'ZBrush']
       },
       heroImage: "", statementImage: "", statement: ["日常", "片段", "记录"],

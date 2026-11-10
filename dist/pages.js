@@ -89,7 +89,7 @@
   }
   function lifeProfile(profile) {
     const entries=items=>items.map(item=>`<li><span class="mono">${esc(item.date)}</span><h4>${item.route?`<a href="#${esc(item.route)}" data-project-route="${esc(item.route)}">${esc(item.title)} ↗</a>`:esc(item.title)}</h4><p>${esc(item.text)}</p></li>`).join('');
-    return `<section class="detail-section life-about" data-detail-section="profile" aria-labelledby="life-about-heading"><header><span class="mono">02 / ABOUT ME</span><h2 id="life-about-heading">关于我</h2><p>学习、做游戏，以及球场上的日常。</p></header><div class="life-about-columns"><section><h3>学习与经历</h3><ol>${entries(profile.background)}</ol></section><section><h3>我的创作</h3><ol>${entries(profile.creative)}</ol></section></div><div class="life-about-notes"><div><h3>创作记录</h3><p>${esc(profile.recognition)}</p></div><div><h3>常用工具</h3><ul>${profile.tools.map(tool=>`<li>${esc(tool)}</li>`).join('')}</ul></div></div></section>`;
+    return `<section class="detail-section life-about" data-detail-section="profile" aria-labelledby="life-about-heading"><header><span class="mono">02 / ABOUT ME</span><h2 id="life-about-heading">关于我</h2><p>学习、做游戏，以及球场上的日常。</p></header><div class="life-about-columns"><section><h3>学习与经历</h3><ol>${entries(profile.background)}</ol></section><section><h3>我的创作</h3><ol>${entries(profile.creative)}</ol></section></div><div class="life-about-notes"><div><h3>创作记录</h3><p>${esc(profile.recognition)}</p></div><div><h3>设计与工具</h3>${profile.skills?.length?`<p class="life-design-skills">${profile.skills.map(esc).join(' · ')}</p>`:''}<ul>${profile.tools.map(tool=>`<li>${esc(tool)}</li>`).join('')}</ul></div></div></section>`;
   }
   function build(name) {
     data = window.PORTFOLIO_CONTENT.pages[name];
@@ -273,7 +273,7 @@
       const cover=smooth(p/.24),reveal=smooth((p-.48)/.52);
       overlay.style.transform=`translate3d(0,${(1-cover)*100}%,0)`;
       overlay.style.opacity=1-smooth((p-.92)/.08);
-      const scale=mix(2.8,95,Math.pow(reveal,2.5));
+      const scale=mix(2.8,200,Math.pow(reveal,2.5));
       cutout.setAttribute('transform',`translate(800 450) scale(${scale}) translate(-50 -50)`);
       echo.style.opacity=1-smooth((p-.42)/.2);
       $('.route-transition-caption').style.opacity=1-reveal;
