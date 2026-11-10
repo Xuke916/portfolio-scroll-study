@@ -50,14 +50,16 @@
   function buildProject(info) {
     const {project,index} = info, projects = window.PORTFOLIO_CONTENT.pages.work.projects;
     data = window.PORTFOLIO_CONTENT.pages.work;
-    if(project.slug==='project-03'&&window.MoneyBallCaseStudy){
+    const caseStudy=project.slug==='project-01'?window.PoroCaseStudy:project.slug==='project-03'?window.MoneyBallCaseStudy:null;
+    if(caseStudy){
       const previous=projects[(index+projects.length-1)%projects.length],next=projects[(index+1)%projects.length];
       const pagination=`<section class="project-pagination" data-detail-section="projectNavigation"><a href="#${projectRoute(previous)}" data-project-route="${projectRoute(previous)}"><span class="mono">← 上一个项目</span><strong>${esc(previous.title)}</strong></a><button data-back-projects class="mono">返回个人项目 ↗</button><a href="#${projectRoute(next)}" data-project-route="${projectRoute(next)}"><span class="mono">下一个项目 →</span><strong>${esc(next.title)}</strong></a></section>`;
-      root.innerHTML='<button class="detail-back mono" data-back-projects>↖ 返回个人项目</button>'+window.MoneyBallCaseStudy.render({footer:footer(),pagination});
-      ui={kind:'project',caseStudy:true,article:$('.detail-route',root),heroTitle:$('.project-detail-title',root),projectCover:$('.project-detail-cover',root),sections:$$('[data-detail-section]',root),sectionButtons:$$('.mb-toc [data-section]',root),toc:$('.mb-toc',root),footerPhoto:$('.footer-portrait',root)};
-      caseCleanup=window.MoneyBallCaseStudy.mount(root);measure();
+      root.innerHTML='<button class="detail-back mono" data-back-projects>↖ 返回个人项目</button>'+caseStudy.render({footer:footer(),pagination});
+      const toc=$(caseStudy.tocSelector||'.mb-toc',root);
+      ui={kind:'project',caseStudy:true,headerColor:caseStudy.headerColor||'#0a2447',article:$('.detail-route',root),heroTitle:$('.project-detail-title',root),projectCover:$('.project-detail-cover',root),sections:$$('[data-detail-section]',root),sectionButtons:$$('[data-section]',toc),toc,footerPhoto:$('.footer-portrait',root)};
+      caseCleanup=caseStudy.mount(root);measure();
       if(typeof ResizeObserver!=='undefined'){
-        projectObserver=new ResizeObserver(()=>{if(route==='work/project-03'){measure();if(jump?.section){target=jump.to=metrics.sections[jump.section].anchor;}render(position);}});
+        projectObserver=new ResizeObserver(()=>{if(route===projectRoute(project)){measure();if(jump?.section){target=jump.to=metrics.sections[jump.section].anchor;}render(position);}});
         projectObserver.observe(ui.article);
       }
       return;
@@ -179,7 +181,7 @@
   function render(y){
     if(!metrics||route==='home')return;
     const {h,w,sections:s}=metrics;
-    document.documentElement.style.setProperty('--header-color',menuPaused?'#f3f3eb':(route==='life'||ui.caseStudy)?'#0a2447':'#f3f3eb');
+    document.documentElement.style.setProperty('--header-color',menuPaused?'#f3f3eb':ui.caseStudy?ui.headerColor:route==='life'?'#0a2447':'#f3f3eb');
     if(ui.footerPhoto&&!ui.caseStudy)ui.footerPhoto.style.transform=`translate3d(${mouseX*8}px,${mouseY*5}px,0)`;
     if(ui.kind==='project'){
       if(!ui.caseStudy)ui.projectCover.style.transform=`translate3d(0,${clamp(y/h)*22}px,0)`;
@@ -294,6 +296,8 @@
     home(chapter='explore',{immediate=false}={}){transitionTo('home',{chapter,immediate});}
   };
   document.addEventListener('click',e=>{
+    const poroImage=e.target.closest?.('[data-poro-image]');
+    if(poroImage&&route==='work/project-01'&&!busy){stop();window.PoroCaseStudy.openImage(poroImage.dataset.poroImage,poroImage.dataset.caption);return;}
     const moneyImage=e.target.closest?.('[data-money-image]');
     if(moneyImage&&ui?.caseStudy&&!busy){stop();window.MoneyBallCaseStudy.openImage(moneyImage.dataset.moneyImage,moneyImage.dataset.caption);return;}
     if(performance.now()<suppressCoverClickUntil&&e.target.closest?.('.project-art')){e.preventDefault();return;}

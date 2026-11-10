@@ -32,9 +32,13 @@ const dom = new JSDOM(html, { url: 'https://example.github.io/portfolio-scroll-s
 const { window } = dom;
 window.eval(fs.readFileSync(path.join(dist, 'content.js'), 'utf8'));
 window.eval(fs.readFileSync(path.join(dist, 'moneyball.js'), 'utf8'));
+window.eval(fs.readFileSync(path.join(dist, 'poro.js'), 'utf8'));
 const caseContainer = window.document.createElement('div');
 caseContainer.innerHTML = window.MoneyBallCaseStudy.render({ footer: '', pagination: '' });
 window.document.body.append(caseContainer);
+const poroContainer=window.document.createElement('div');
+poroContainer.innerHTML=window.PoroCaseStudy.render({pagination:''});
+window.document.body.append(poroContainer);
 const assetPaths = new Set();
 function checkReference(value, from = 'index.html') {
   if (!value || /^(?:#|data:|https?:|mailto:|tel:|blob:)/.test(value)) return;
@@ -47,6 +51,7 @@ function checkReference(value, from = 'index.html') {
   assetPaths.add(path.relative(dist, absolute));
 }
 for (const el of window.document.querySelectorAll('script[src],img[src],video[src],source[src],link[href]')) checkReference(el.getAttribute('src') || el.getAttribute('href'));
+for (const el of window.document.querySelectorAll('[data-motion-src],[data-poro-image]')) checkReference(el.dataset.motionSrc || el.dataset.poroImage);
 function contentAssets(value) {
   if (typeof value === 'string' && value.startsWith('assets/')) checkReference(value);
   else if (Array.isArray(value)) value.forEach(contentAssets);
@@ -64,7 +69,7 @@ for (const absolute of files.filter(file => file.endsWith('.js'))) {
   assert.equal(syntax.status, 0, `JavaScript syntax: ${path.basename(absolute)}`);
 }
 console.log(`PASS ${files.length} deployable files, ${assetPaths.size} local resource references, repository-subpath compatibility; video elements: ${videoCount}`);
-for (const test of ['check-scroll.cjs', 'check-responsive.cjs', 'check-fluid.cjs', 'check-helmet.cjs', 'check-moneyball.cjs']) {
+for (const test of ['check-scroll.cjs', 'check-responsive.cjs', 'check-fluid.cjs', 'check-helmet.cjs', 'check-moneyball.cjs', 'check-poro.cjs']) {
   const result = spawnSync(process.execPath, [path.join(root, 'tests', test)], { cwd: root, stdio: 'inherit' });
   assert.equal(result.status, 0, test);
 }

@@ -60,6 +60,11 @@ Object.assign(window.PORTFOLIO_CONTENT.pages.work.projects[2], {
   role: '独立设计与制作', category: '双人棒球策略桌游',
   overview: '把球场上一瞬间的判断，转化为桌面上可以观察、预测和调整的选择。'
 });
+Object.assign(window.PORTFOLIO_CONTENT.pages.work.projects[0], {
+  caseTitle: '魄罗大冒险', image: 'assets/poro/launch-cn.jpg', year: '2024.10 — 2025.01',
+  role: '项目负责人 / 玩法策划 / 美术与动画', category: '2D 像素平台动作游戏',
+  overview: '从魄罗柔软、活泼的形象出发，用钩锁、碰撞反弹与坠落风险组织移动体验。'
+});
 window.PORTFOLIO_CONTENT.pages.work.projects[2].playtestPhotos = [
   { image: '', title: '试玩全景', caption: '双人对局与桌面布局' },
   { image: '', title: '投打操作', caption: '标记、预测与揭牌的过程' },
