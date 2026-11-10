@@ -42,7 +42,7 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       pages: write
       id-token: write
@@ -55,6 +55,8 @@ jobs:
       - name: Publish website
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        with:
+          timeout: 1080000
 
   verify-live:
     needs: deploy
