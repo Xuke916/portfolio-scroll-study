@@ -274,7 +274,7 @@
       overlay.style.transform=`translate3d(0,${(1-cover)*100}%,0)`;
       overlay.style.opacity=1-smooth((p-.92)/.08);
       const scale=mix(2.8,95,Math.pow(reveal,2.5));
-      cutout.setAttribute('transform',`translate(800 450) scale(${scale}) translate(${-mix(50,32,reveal)} -50)`);
+      cutout.setAttribute('transform',`translate(800 450) scale(${scale}) translate(-50 -50)`);
       echo.style.opacity=1-smooth((p-.42)/.2);
       $('.route-transition-caption').style.opacity=1-reveal;
       if(!switched&&p>=.3){switched=true;applyRoute(to,{chapter,restore,projectIndex});}

@@ -16,7 +16,6 @@
   const message = $('.message-scene'), gallery = $('.gallery-scene'), split = $('.split-scene');
   const world = $('.gallery-world'), quote = $('.gallery-quote');
   const signature = $('.message-signature'), signaturePath = $('path', signature);
-  const ring = $('.transition-ring');
   const header = $('.site-header'), progress = $('.scroll-progress>span');
   const menu = $('.site-menu'), toggle = $('.menu-toggle');
   const cursor = $('.custom-cursor'), dialog = $('.image-dialog');
@@ -190,9 +189,11 @@
     const px = reduced.matches ? 0 : mouseX, py = reduced.matches ? 0 : mouseY;
     const heroP = smooth(range(t, 0, 1.7));
     const thumb = smooth(range(t, 1.7, 3.05));
+    const heroPX = px * (1-thumb), heroPY = py * (1-thumb);
     const messageOut = smooth(range(t, 4.25, 5.1));
     const galleryEnter=smooth(range(t,4.3,5.2));
-    const splitEnter=smooth(range(t,8.35,9.9));
+    const splitEnter=smooth(range(t,8,10));
+    split.style.opacity=splitEnter;
     if(t<5.3){
     const heroScale = mix(mix(photoHero ? .91 : 1.18, photoHero ? .80 : .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
@@ -205,13 +206,13 @@
       // Preserve the established framing, but never expose the PNG's cut edge
       // above the frame. A bottom origin keeps that edge level during parallax.
       const nominalBottom = unit * (mobile ? .92 : .94) + heroY * portraitHeight / 100
-        + (heroScale - 1) * portraitHeight * .43 + py * 15;
+        + (heroScale - 1) * portraitHeight * .43 + heroPY * 15;
       const coveredBottom = frameBottom + 2;
       const distance = nominalBottom - coveredBottom;
       const portraitBottom = (nominalBottom + coveredBottom + Math.hypot(distance, 4)) / 2;
-      portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),${portraitBottom-unit}px,0) perspective(1300px) rotateY(${px*3}deg) scale(${heroScale})`;
+      portrait.style.transform = `translate3d(calc(-50% + ${heroPX*26}px),${portraitBottom-unit}px,0) perspective(1300px) rotateY(${heroPX*3}deg) scale(${heroScale})`;
     } else {
-      portrait.style.transform = `translate3d(calc(-50% + ${px*26}px),calc(${heroY}% + ${py*15}px),0) perspective(1300px) rotateX(${-py*5}deg) rotateY(${px*10}deg) scale(${heroScale})`;
+      portrait.style.transform = `translate3d(calc(-50% + ${heroPX*26}px),calc(${heroY}% + ${heroPY*15}px),0) perspective(1300px) rotateX(${-heroPY*5}deg) rotateY(${heroPX*10}deg) scale(${heroScale})`;
     }
     hero.style.clipPath = `inset(${insetY}% ${insetX}%)`;
     hero.style.opacity = 1-messageOut;
@@ -221,8 +222,8 @@
     window.HeroFluid?.setThumbnail(thumb);
     hero.style.transform = `translate3d(0,${-messageOut*unit*.2}px,0) scale(${mix(1,.88,messageOut)})`;
     ui.heroLight.style.opacity = 1-thumb*.5;
-    ui.heroLight.style.setProperty('--light-x',`${50+px*35}%`);
-    ui.heroLight.style.setProperty('--light-y',`${40+py*30}%`);
+    ui.heroLight.style.setProperty('--light-x',`${50+heroPX*35}%`);
+    ui.heroLight.style.setProperty('--light-y',`${40+heroPY*30}%`);
     ui.orbits[0].style.transform = `translate(-50%,-50%) rotate(${mix(-18,28,heroP)+px*14}deg) scale(${mix(1,1.35,heroP)})`;
     ui.orbits[1].style.transform = `translate(-50%,-50%) rotate(${mix(35,-24,heroP)-px*18}deg)`;
     const shells = smooth(range(t,.6,1.5))*(1-thumb);
@@ -232,7 +233,7 @@
     });
     ui.heroCopy.style.opacity = 0;
     ui.heroMeta.forEach(el=>el.style.opacity=1-thumb);
-    ui.heroContours.style.transform=`translate3d(${-px*24}px,${-t*1.8-py*1.5}%,0) rotate(${t*.5}deg)`;
+    ui.heroContours.style.transform=`translate3d(${-heroPX*24}px,${-t*1.8-heroPY*1.5}%,0) rotate(${t*.5}deg)`;
     message.style.opacity=smooth(range(t,1.65,2.3));
     message.style.visibility=t>5.3?'hidden':'visible';
     ui.messageContours.style.transform=`translate3d(${-px*18}px,${py*-12}px,0) rotate(${(t-3)*.8}deg)`;
@@ -243,12 +244,12 @@
     const draw=smooth(range(t,2.5,3.35));
     signature.style.opacity=draw*(1-messageOut);
     signaturePath.style.strokeDashoffset=1-draw;
-    signature.style.transform=`translate3d(calc(-50% + ${-px*22}px),calc(-50% + ${-py*14}px),0) rotate(${px*3}deg) scale(${mix(.92,1,draw)})`;
+    signature.style.transform=`translate3d(calc(-50% + ${-heroPX*22}px),calc(-50% + ${-heroPY*14}px),0) rotate(${heroPX*3}deg) scale(${mix(.92,1,draw)})`;
 
     }
     if(t>4.2&&t<10.1){
     gallery.style.opacity=galleryEnter;
-    gallery.style.transform=`scale(${mix(1.13,1,galleryEnter)-splitEnter*.12}) rotate(${-splitEnter*2}deg)`;
+    gallery.style.transform=`scale(${mix(1.13,1,galleryEnter)}) rotate(0deg)`;
     const gp=Math.max(0,t-5.25);
     cards.forEach((card,i)=>{
       card.style.transform=`translate3d(${-px*(9+i*3)}px,${((1-galleryEnter)*.65-gp*layout[i].speed)*unit-py*(7+i*2)}px,0)`;
@@ -260,12 +261,9 @@
     ui.counter.textContent=String(clamp(Math.floor(gp*2.3)+1,1,8)).padStart(2,'0');
 
     }
-    if(t>8.25){
-    // A growing aperture reveals the white scene while the dark scene recedes.
+    if(t>7.95){
+    // Fade the whole white scene in over the blue gallery, without a spatial wipe.
     split.style.transform='none';
-    split.style.clipPath=`ellipse(${splitEnter*92}% ${splitEnter*140}% at 50% 50%)`;
-    ring.style.transform=`translate(-50%,-50%) scale(${splitEnter})`;
-    ring.style.opacity=reduced.matches?0:Math.sin(splitEnter*Math.PI)*.7;
     const endP=smooth(range(t,8.75,10.3));
     const dist=mobile?28:32;
     ui.splitPortraits[0].style.transform=`translate3d(${mix(-dist,0,endP)-px*2}%,${py*-1}%,0) scaleX(-1)`;
@@ -289,9 +287,8 @@
     hero.style.visibility=t>5.2?'hidden':'visible';
     message.style.visibility=t>5.3?'hidden':'visible';
     signature.style.visibility=t>5.2?'hidden':'visible';
-    ring.style.visibility=t<8.3||t>9.95?'hidden':'visible';
     gallery.style.visibility=t>10||t<4.29?'hidden':'visible';
-    split.style.visibility=t<8.34?'hidden':'visible';
+    split.style.visibility=t<8?'hidden':'visible';
     window.HeroFluid?.setActive(t<5.2&&!menuOpen&&!homeSuspended);
   }
   function writeScroll(value){
