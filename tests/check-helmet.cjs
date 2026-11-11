@@ -5,6 +5,9 @@ const {JSDOM}=require('jsdom');
 const root=path.resolve(__dirname,'../dist');
 const dom=new JSDOM('<div class="hero-portrait"></div>',{runScripts:'outside-only'});
 const w=dom.window,d=w.document;
+// Keep test device capabilities explicit; CI runners may only expose two cores.
+Object.defineProperty(w.navigator,'hardwareConcurrency',{value:8,configurable:true});
+w.matchMedia=()=>({matches:false});
 let pauses=0,resumes=0;
 w.SVGSVGElement.prototype.pauseAnimations=function(){pauses++;};
 w.SVGSVGElement.prototype.unpauseAnimations=function(){resumes++;};
@@ -34,4 +37,9 @@ const compact=api.buildMesh(true);assert.ok(compact.edges.length<1700&&compact.e
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert.ok(html.indexOf('helmet-ink.js')<html.indexOf('fluid-hero.js'));
 assert.ok(!html.includes('helmet-orbit.js'),'solid orbit renderer is removed');
+ink.remove();
+Object.defineProperty(w.navigator,'hardwareConcurrency',{value:2,configurable:true});
+const light=api.mount(portrait),compactSvg=portrait.querySelector('svg');
+assert.equal(compactSvg.dataset.quality,'compact');assert.equal(compactSvg.querySelector('animateTransform'),null,'low-core devices keep the ink structure without continuous scanning');
+light.setActive(false);light.setActive(true);assert.equal(compactSvg.dataset.motion,'static');
 dom.window.close();console.log('PASS photo-aligned helmet outline, clipped fine mesh, faint ink scan, pause/resume, gray-thumbnail fade and no solid 3D renderer');
