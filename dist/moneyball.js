@@ -1,12 +1,13 @@
 (() => {
  'use strict';
- const asset=n=>n===14?'assets/moneyball/defense-flow-v3.png':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'png':'jpeg'}`;
+ const asset=n=>n===14?'assets/moneyball/defense-flow-v3.webp':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'webp':'jpeg'}`;
  const sizes={1:[1702,1276],2:[1702,1276],3:[1280,1707],4:[1280,1707],5:[3750,1850],6:[1280,1707],7:[3750,1975],8:[1280,1707],9:[960,1280],10:[3750,1850],11:[1280,1707],12:[960,1280],13:[3750,2225],14:[3750,1850],15:[3750,1975],16:[1461,1076],17:[1280,1707],18:[960,1280],19:[1280,1707],20:[1280,1707]};
  sizes[14]=[1536,1024];
  const chapters=[['projectHero','项目概览'],['moneyOrigin','桌面与组件'],['moneyRules','一球到一场'],['moneyPrediction','投打预测'],['moneyDefense','守备与阵容'],['moneySimplification','规则迭代'],['moneyMaterial','实体制作'],['moneyTesting','试玩与收获']];
  function photo(n,alt,caption,cls=''){
   const [w,h]=sizes[n];
-  return `<figure class="mb-photo ${cls}"><button class="mb-image-button" data-money-image="${asset(n)}" data-caption="${caption}" aria-label="放大查看：${alt}"><img src="${asset(n)}" width="${w}" height="${h}" alt="${alt}" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button><figcaption>${caption}</figcaption></figure>`;
+  const variants=[480,960].filter(width=>width<w).map(width=>`assets/moneyball/image${n}-${width}.webp ${width}w`);
+  return `<figure class="mb-photo ${cls}"><button class="mb-image-button" data-money-image="${asset(n)}" data-caption="${caption}" aria-label="放大查看：${alt}"><img src="${asset(n)}" srcset="${[...variants,`${asset(n)} ${w}w`].join(', ')}" sizes="(max-width:600px) 86vw, (max-width:1100px) 88vw, 1040px" width="${w}" height="${h}" alt="${alt}" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button><figcaption>${caption}</figcaption></figure>`;
  }
  const pair=(a,b,altA,altB,captionA,captionB)=>`<div class="mb-pair">${photo(a,altA,captionA)}${photo(b,altB,captionB)}</div>`;
  const note=(label,text)=>`<aside class="mb-note"><span class="mono">${label}</span><p>${text}</p></aside>`;
@@ -26,7 +27,7 @@
   return `<div class="mb-demo" aria-label="投打预测机制演示"><div class="mb-demo-top"><span class="mono">INTERACTIVE / 固定示例</span><h3>同一个标记，你会怎样回应？</h3><p>为了说明机制，你可以预设球路；实际比赛中，投手会暗选球种。</p></div><div class="mb-demo-body"><div class="mb-demo-grid" aria-label="投打格子示意"></div><div class="mb-demo-controls"><fieldset><legend>球路示例</legend><label><input type="radio" name="mb-pitch" value="straight" checked>位置不变（快速球）</label><label><input type="radio" name="mb-pitch" value="drop">向下移动一格（曲球）</label></fieldset><fieldset><legend>打击覆盖</legend><label><input type="radio" name="mb-cover" value="3" checked>三格 · 覆盖更多位置</label><label><input type="radio" name="mb-cover" value="1">一格 · 冒险争取得分</label></fieldset><div class="mb-demo-status" aria-live="polite" aria-atomic="true"></div></div></div><div class="mb-demo-steps" aria-label="演示步骤"><button data-mb-step="0" aria-pressed="true"><span>01</span>展示标记</button><button data-mb-step="1" aria-pressed="false"><span>02</span>打者回应</button><button data-mb-step="2" aria-pressed="false"><span>03</span>揭晓结果</button></div><div class="mb-demo-legend"><span><i class="mb-key-zone"></i>中央九格好球区</span><span><i class="mb-key-cover"></i>打击覆盖</span><span><i class="mb-key-ball"></i>最终落点</span></div></div>`;
  }
  function render({pagination}){
-  const extra=(label,body)=>`<details class="mb-process-details"><summary>${label}<span aria-hidden="true">＋</span></summary>${body}</details>`;
+  const extra=(label,body)=>`<div class="mb-process-details"><h3>${label.replace(/^(查看|展开|复查)/,'')}</h3>${body}</div>`;
   const step=(n,title,body)=>`<li><span class="mb-step-number">${n}</span><div><h3>${title}</h3>${body}</div></li>`;
   const zone=`<svg viewBox="0 0 270 270" role="img" aria-label="中央九格为好球区，外侧十二格为坏球区">${Array.from({length:25},(_,i)=>{const x=i%5,y=Math.floor(i/5);return (x===0||x===4)&&(y===0||y===4)?'':`<rect x="${25+x*44}" y="${25+y*44}" width="44" height="44" fill="${x>0&&x<4&&y>0&&y<4?'#e3f1ff':'#f6f8fa'}" stroke="#b6c5d5"/>`;}).join('')}<rect x="69" y="69" width="132" height="132" fill="none" stroke="#1e90ff" stroke-width="3"/></svg>`;
   return `<button class="mb-toc-toggle" aria-label="打开项目目录" aria-controls="detail-section-navigation" aria-expanded="false">目录</button><nav class="mb-toc" id="detail-section-navigation" aria-label="Money Ball 项目章节"><span class="mono mb-toc-title">MONEY BALL</span>${chapters.map(([id,label],i)=>`<button data-section="${id}"${i===0?' class="active" aria-current="step"':''}><span>${String(i+1).padStart(2,'0')}</span>${label}</button>`).join('')}</nav><article class="detail-route project-detail moneyball-case" data-route="work/project-03">

@@ -4,17 +4,18 @@
  const sizes={1:[1280,735],2:[1280,960],3:[1086,1448],5:[480,270],7:[1280,235],8:[1280,671],9:[1280,576],10:[1280,578],11:[1280,299],12:[640,640],13:[1280,575],14:[960,728],15:[1000,500],16:[1000,1000],17:[736,414],18:[480,283],19:[480,219],20:[480,219],21:[480,219],22:[480,219],23:[480,219],24:[480,248],25:[480,219],26:[480,219],27:[480,219]};
  const chapters=[['projectHero','项目概览'],['poroCharacter','认识魄罗'],['poroReference','玩法的由来'],['poroGrapple','钩锁与反弹'],['poroFall','坠落与提示'],['poroLevel','关卡安排'],['poroTeam','团队协作']];
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const source=n=>base+(n>=18?`image${n}.gif`:n===12?'image12.png':`image${n}_light.jpg`);
+ const source=n=>base+(n===12?'image12.png':`image${n}_light.jpg`);
  function photo(n,alt,caption,cls=''){
   const [width,height]=sizes[n];
-  return `<figure class="poro-photo ${cls}"><button class="poro-image" data-poro-image="${source(n)}" data-caption="${esc(caption.replace(/<[^>]*>/g,''))}" aria-label="放大查看：${esc(alt)}"><img src="${source(n)}" alt="${esc(alt)}" width="${width}" height="${height}" loading="lazy" decoding="async"><span class="poro-enlarge" aria-hidden="true">↗</span></button><figcaption>${caption}</figcaption></figure>`;
+  const responsive=width>640&&n!==12?` srcset="${source(n).replace('.jpg','-640.webp')} 640w, ${source(n)} ${width}w" sizes="(max-width:600px) 86vw, (max-width:1100px) 88vw, 1040px"`:'';
+  return `<figure class="poro-photo ${cls}"><button class="poro-image" data-poro-image="${source(n)}" data-caption="${esc(caption.replace(/<[^>]*>/g,''))}" aria-label="放大查看：${esc(alt)}"><img src="${source(n)}"${responsive} alt="${esc(alt)}" width="${width}" height="${height}" loading="lazy" decoding="async"><span class="poro-enlarge" aria-hidden="true">↗</span></button><figcaption>${caption}</figcaption></figure>`;
  }
  function motion(n,title,caption){
-  const [width,height]=sizes[n],poster=base+`still-${n}.png`;
-  return `<figure class="poro-photo poro-motion" data-motion-figure><div class="poro-motion-frame"><img src="${poster}" data-still="${poster}" data-motion-src="${source(n)}" alt="${esc(title)}" width="${width}" height="${height}" loading="lazy" decoding="async"></div><div class="poro-motion-control"><span class="mono">GAMEPLAY / ${String(n-17).padStart(2,'0')}</span><button type="button" data-poro-motion data-title="${esc(title)}" aria-label="播放演示：${esc(title)}" aria-pressed="false">播放演示 <span aria-hidden="true">▶</span></button></div><figcaption><strong>${title}</strong>${caption?`<span>${caption}</span>`:''}</figcaption></figure>`;
+  const [width,height]=sizes[n],poster=base+`still-${n}.webp`;
+  return `<figure class="poro-photo poro-motion" data-motion-figure><div class="poro-motion-frame"><video data-motion-src="${base}gameplay-${n}.mp4" poster="${poster}" aria-label="${esc(title)}" width="${width}" height="${height}" style="aspect-ratio:${width}/${height}" muted loop playsinline preload="none" disablepictureinpicture><img src="${poster}" alt="${esc(title)}" width="${width}" height="${height}" loading="lazy" decoding="async"></video></div><div class="poro-motion-control"><span class="mono">GAMEPLAY / ${String(n-17).padStart(2,'0')}</span><button type="button" data-poro-motion data-title="${esc(title)}" aria-label="暂停演示：${esc(title)}" aria-pressed="true">暂停演示 <span aria-hidden="true">Ⅱ</span></button></div><figcaption><strong>${title}</strong>${caption?`<span>${caption}</span>`:''}</figcaption></figure>`;
  }
  const section=(id,no,en,title,lead,body)=>`<section class="poro-section" data-detail-section="${id}"><header class="poro-section-head"><span class="mono poro-eyebrow">${no} / ${en}</span><h2>${title}</h2><p>${lead}</p></header>${body}</section>`;
- const more=(label,body)=>`<details class="poro-more"><summary>${label}<span aria-hidden="true">＋</span></summary>${body}</details>`;
+ const more=(label,body)=>`<div class="poro-more"><h3>${label}</h3>${body}</div>`;
  function render({pagination}){
   return `<button class="poro-toc-toggle" type="button" aria-label="打开项目目录" aria-controls="detail-section-navigation" aria-expanded="false">目录</button><nav class="poro-toc" id="detail-section-navigation" aria-label="魄罗大冒险项目章节"><span class="mono poro-toc-title">PORO'S ADVENTURE</span>${chapters.map(([id,label],i)=>`<button data-section="${id}"${i===0?' class="active" aria-current="step"':''}><span>${String(i+1).padStart(2,'0')}</span>${label}</button>`).join('')}</nav>
    <article class="detail-route project-detail poro-case" data-route="work/project-01">
@@ -24,7 +25,7 @@
      <p class="poro-intro">以《英雄联盟》中的小生物魄罗为灵感的 2D 像素平台动作游戏。我希望玩家通过移动和身体变化，亲手感受到这个角色的魅力。</p>
      <div class="poro-outcome"><span>《英雄联盟》IP 游戏创意大赛 · 最佳 IP 奖</span><p>2025 年正式上线《英雄联盟手游》，成为冬日活动玩法。</p></div>
      <dl class="poro-facts"><div><dt>制作时间 / 团队</dt><dd>2024.10 — 2025.01<br>5 人团队</dd></div><div><dt>我的工作</dt><dd>项目负责人、玩法策划<br>角色与场景美术、角色动画</dd></div><div><dt>工具 / 版本</dt><dd>Unity · Aseprite<br>安卓比赛原型 → 手游限时内容</dd></div></dl>
-     <figure class="poro-photo poro-cover"><button class="poro-image" data-poro-image="${base}launch-cn.jpg" data-caption="上线活动页面 · 《英雄联盟手游》冬日活动" aria-label="放大查看魄罗大冒险上线活动页面"><img src="${base}launch-cn.jpg" alt="魄罗大冒险在英雄联盟手游中的冬日活动入口，蓝色雪山背景与魄罗主视觉" width="2336" height="1080" fetchpriority="high" decoding="async"><span class="poro-enlarge" aria-hidden="true">↗</span></button><figcaption>上线活动页面 · 《英雄联盟手游》冬日活动</figcaption></figure>
+     <figure class="poro-photo poro-cover"><button class="poro-image" data-poro-image="${base}launch-cn.jpg" data-caption="上线活动页面 · 《英雄联盟手游》冬日活动" aria-label="放大查看魄罗大冒险上线活动页面"><img src="${base}launch-cn.jpg" srcset="${base}launch-cn-640.webp 640w, ${base}launch-cn.jpg 2336w" sizes="(max-width:600px) 86vw, (max-width:1100px) 88vw, 1040px" alt="魄罗大冒险在英雄联盟手游中的冬日活动入口，蓝色雪山背景与魄罗主视觉" width="2336" height="1080" fetchpriority="high" decoding="async"><span class="poro-enlarge" aria-hidden="true">↗</span></button><figcaption>上线活动页面 · 《英雄联盟手游》冬日活动</figcaption></figure>
      <div class="poro-reading-links"><button data-section="poroGrapple">看钩锁与反弹 <span>↓</span></button><button data-section="poroFall">看试玩后的修改 <span>↓</span></button></div>
      <div class="poro-awards">${photo(2,'比赛颁奖合影的 AI 英文翻译展示版','比赛颁奖合影 · AI 英文翻译展示版')}${photo(3,'最佳 IP 奖证书的 AI 英文翻译展示版','最佳 IP 奖证书 · AI 英文翻译展示版')}</div>
      ${more('上线页面的英文翻译展示版',photo(1,'上线活动页面的 AI 英文翻译展示版','AI 英文翻译展示版，用于辅助阅读；原始上线页面见上方封面。'))}
@@ -77,17 +78,31 @@
   const onNavClick=e=>{if(e.target.closest('[data-section]')&&compact.matches)setNav(false);};
   const onEscape=e=>{if(e.key==='Escape'&&toggle.getAttribute('aria-expanded')==='true'){setNav(false);toggle.focus();}};
   const onMode=()=>setNav(false);
-  let menuPaused=false;
-  const motions=[...root.querySelectorAll('[data-motion-figure]')].map(figure=>({figure,img:figure.querySelector('img'),button:figure.querySelector('[data-poro-motion]'),requested:false,visible:true}));
-  const sync=item=>{const playing=item.requested&&item.visible&&!document.hidden&&!menuPaused;const src=playing?item.img.dataset.motionSrc:item.img.dataset.still;if(item.img.getAttribute('src')!==src)item.img.setAttribute('src',src);item.button.setAttribute('aria-pressed',String(item.requested));item.button.setAttribute('aria-label',(item.requested?'暂停演示：':'播放演示：')+item.button.dataset.title);item.button.innerHTML=(item.requested?'暂停演示':'播放演示')+` <span aria-hidden="true">${item.requested?'Ⅱ':'▶'}</span>`;};
-  const onMotion=e=>{const button=e.target.closest('[data-poro-motion]');if(!button)return;const item=motions.find(entry=>entry.button===button);item.requested=!item.requested;sync(item);};
+  let menuPaused=false,disposed=false,fallbackFrame=0;
+  const motions=[...root.querySelectorAll('[data-motion-figure]')].map(figure=>({figure,video:figure.querySelector('video'),button:figure.querySelector('[data-poro-motion]'),requested:!reduced.matches,manualPaused:false,visible:false,wanted:false,pending:false,blocked:false}));
+  const labels=item=>{const enabled=item.requested&&!item.blocked;item.button.setAttribute('aria-pressed',String(enabled));item.button.setAttribute('aria-label',(enabled?'暂停演示：':'播放演示：')+item.button.dataset.title);item.button.innerHTML=(enabled?'暂停演示':'播放演示')+` <span aria-hidden="true">${enabled?'Ⅱ':'▶'}</span>`;};
+  const sync=item=>{
+   const video=item.video;
+   item.wanted=!disposed&&item.requested&&item.visible&&!document.hidden&&!menuPaused;
+   labels(item);
+   if(!item.wanted){video.pause();return;}
+   if(item.pending||(!video.paused&&!item.blocked))return;
+   if(!video.hasAttribute('src')){video.muted=true;video.src=video.dataset.motionSrc;}
+   item.pending=true;item.blocked=false;
+   // A late play promise must never restart a video after it has left the page.
+   Promise.resolve(video.play()).then(()=>{item.pending=false;if(!item.wanted)video.pause();else if(video.paused)sync(item);},error=>{item.pending=false;if(item.wanted){if(error?.name==='AbortError')sync(item);else{item.blocked=true;labels(item);}}});
+  };
+  const onMotion=e=>{const button=e.target.closest('[data-poro-motion]');if(!button)return;const item=motions.find(entry=>entry.button===button);item.requested=item.blocked||!item.requested;item.manualPaused=!item.requested;item.blocked=false;sync(item);};
   const syncAll=()=>motions.forEach(sync);
-  const onReduced=()=>{if(reduced.matches)motions.forEach(item=>item.requested=false);syncAll();};
+  const onReduced=()=>{motions.forEach(item=>item.requested=!reduced.matches&&!item.manualPaused);syncAll();};
   const onMenu=e=>{menuPaused=!!e.detail.open;if(menuPaused)setNav(false);syncAll();};
-  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{for(const entry of entries){const item=motions.find(item=>item.figure===entry.target);item.visible=entry.isIntersecting;sync(item);}});
+  const observer=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{for(const entry of entries){const item=motions.find(item=>item.figure===entry.target);item.visible=entry.isIntersecting&&entry.intersectionRatio>=.15;sync(item);}},{threshold:[0,.15]});
+  const checkVisible=()=>{fallbackFrame=0;motions.forEach(item=>{const rect=item.figure.getBoundingClientRect();item.visible=rect.bottom>0&&rect.top<innerHeight;sync(item);});};
+  const onFallbackScroll=()=>{if(!fallbackFrame)fallbackFrame=requestAnimationFrame(checkVisible);};
   motions.forEach(item=>observer?.observe(item.figure));
+  syncAll();if(!observer){checkVisible();addEventListener('scroll',onFallbackScroll,{passive:true});addEventListener('resize',onFallbackScroll,{passive:true});}
   toggle.addEventListener('click',onToggle);toc.addEventListener('click',onNavClick);root.addEventListener('click',onMotion);document.addEventListener('keydown',onEscape);document.addEventListener('portfolio:menu',onMenu);document.addEventListener('visibilitychange',syncAll);compact.addEventListener('change',onMode);reduced.addEventListener('change',onReduced);setNav(false);
-  return ()=>{observer?.disconnect();motions.forEach(item=>{item.requested=false;sync(item);});toggle.removeEventListener('click',onToggle);toc.removeEventListener('click',onNavClick);root.removeEventListener('click',onMotion);document.removeEventListener('keydown',onEscape);document.removeEventListener('portfolio:menu',onMenu);document.removeEventListener('visibilitychange',syncAll);compact.removeEventListener('change',onMode);reduced.removeEventListener('change',onReduced);};
+  return ()=>{disposed=true;observer?.disconnect();cancelAnimationFrame(fallbackFrame);removeEventListener('scroll',onFallbackScroll);removeEventListener('resize',onFallbackScroll);motions.forEach(item=>{item.requested=false;sync(item);item.video.removeAttribute('src');item.video.load();});toggle.removeEventListener('click',onToggle);toc.removeEventListener('click',onNavClick);root.removeEventListener('click',onMotion);document.removeEventListener('keydown',onEscape);document.removeEventListener('portfolio:menu',onMenu);document.removeEventListener('visibilitychange',syncAll);compact.removeEventListener('change',onMode);reduced.removeEventListener('change',onReduced);};
  }
  function openImage(path,caption){
   window.PortfolioHome.preview(path,caption);

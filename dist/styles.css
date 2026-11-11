@@ -64,3 +64,7 @@
 .hero-photo-mode .hero-coordinate,.hero-photo-mode .corner-card,.hero-photo-mode .scroll-prompt{z-index:3}
 .hero-portrait.fluid-ready .hero-image{opacity:0}
 @media(max-width:600px){.hero-photo-mode .hero-portrait{width:120svh;height:90svh;bottom:0;left:55%;transform-origin:50% 100%}}
+
+/* Background marquees only animate while their scene is visible. */
+body:not(.message-visible) .message-marquee,body.menu-open .message-marquee{animation-play-state:paused}
+@media(pointer:coarse){.scene,.hero-portrait,.split-portrait{will-change:auto}.image-dialog::backdrop{backdrop-filter:none}}

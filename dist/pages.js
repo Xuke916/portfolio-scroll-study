@@ -185,7 +185,7 @@
     if(ui.footerPhoto&&!ui.caseStudy)ui.footerPhoto.style.transform=`translate3d(${mouseX*8}px,${mouseY*5}px,0)`;
     if(ui.kind==='project'){
       if(!ui.caseStudy)ui.projectCover.style.transform=`translate3d(0,${clamp(y/h)*22}px,0)`;
-      ui.sectionButtons.forEach((button,i)=>{const section=s[button.dataset.section],next=ui.sectionButtons[i+1];const active=ui.caseStudy?(y>=section.anchor-2||i===0)&&(!next||y<s[next.dataset.section].anchor-2):y>=section.start-h*.2&&y<section.start+section.length-h*.2;button.classList.toggle('active',active);if(active){button.setAttribute('aria-current','step');if(ui.caseStudy&&ui.activeToc!==button.dataset.section){ui.activeToc=button.dataset.section;ui.toc.scrollTop=Math.max(0,button.offsetTop-ui.toc.clientHeight/2+button.offsetHeight/2);}}else button.removeAttribute('aria-current');});
+      ui.sectionButtons.forEach((button,i)=>{const section=s[button.dataset.section],next=ui.sectionButtons[i+1];const active=ui.caseStudy?(y>=section.anchor-2||i===0)&&(!next||y<s[next.dataset.section].anchor-2):y>=section.start-h*.2&&y<section.start+section.length-h*.2;if(button.classList.contains('active')!==active){button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');}if(active&&ui.caseStudy&&ui.activeToc!==button.dataset.section){ui.activeToc=button.dataset.section;ui.toc.scrollTop=Math.max(0,button.offsetTop-ui.toc.clientHeight/2+button.offsetHeight/2);}});
       progress.style.transform=`scaleX(${clamp(y/Math.max(1,metrics.max))})`;return;
     }
     const hp=clamp(y/Math.max(1,s.hero.length-h));
@@ -378,7 +378,7 @@
     touchGesture=null;
   },{passive:true});
   addEventListener('touchcancel',()=>{touchGesture=null;},{passive:true});
-  document.addEventListener('pointermove',e=>{if(route==='home'||busy||menuPaused||reduced.matches||e.pointerType==='touch')return;aimX=clamp(e.clientX/innerWidth*2-1,-1,1);aimY=clamp(e.clientY/innerHeight*2-1,-1,1);request();},{passive:true});
+  document.addEventListener('pointermove',e=>{if(route==='home'||ui?.caseStudy||busy||menuPaused||reduced.matches||e.pointerType==='touch')return;aimX=clamp(e.clientX/innerWidth*2-1,-1,1);aimY=clamp(e.clientY/innerHeight*2-1,-1,1);request();},{passive:true});
   document.addEventListener('pointerleave',()=>{aimX=aimY=0;request();});
   document.addEventListener('portfolio:menu',e=>{menuPaused=e.detail.open;if(menuPaused){stop();if(route!=='home')document.documentElement.style.setProperty('--header-color','#f3f3eb');}else request();});
   document.addEventListener('keydown',e=>{

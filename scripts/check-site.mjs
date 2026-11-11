@@ -52,6 +52,8 @@ function checkReference(value, from = 'index.html') {
 }
 for (const el of window.document.querySelectorAll('script[src],img[src],video[src],source[src],link[href]')) checkReference(el.getAttribute('src') || el.getAttribute('href'));
 for (const el of window.document.querySelectorAll('[data-motion-src],[data-poro-image]')) checkReference(el.dataset.motionSrc || el.dataset.poroImage);
+for (const el of window.document.querySelectorAll('video[poster]')) checkReference(el.getAttribute('poster'));
+for (const el of window.document.querySelectorAll('img[srcset]')) for(const candidate of el.getAttribute('srcset').split(',')) checkReference(candidate.trim().split(/\s+/)[0]);
 function contentAssets(value) {
   if (typeof value === 'string' && value.startsWith('assets/')) checkReference(value);
   else if (Array.isArray(value)) value.forEach(contentAssets);

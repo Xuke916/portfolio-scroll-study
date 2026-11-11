@@ -6,6 +6,8 @@
   const scene = portrait.parentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width: 600px)');
+  const coarse = matchMedia('(pointer: coarse)');
+  const lightweight = () => mobile.matches || coarse.matches || (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4);
   const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
   const smooth = v => { v = clamp(v); return v * v * (3 - 2 * v); };
   const canvas = document.createElement('canvas');
@@ -17,11 +19,12 @@
   portrait.querySelector('.hero-image').draggable = false;
 
   let images, renderer, airRenderer, ink, ready = false, failed = false;
-  let wanted = !document.body.classList.contains('detail-mode');
+  let wanted = !document.body.classList.contains('detail-mode')&&!/^#(?:work|life)(?:\/|$)/.test(location.hash),loading=false;
   let frame = 0, previous = 0, lastInput = -Infinity, lastPoint = null, draws = 0;
   let thumbnail = clamp(Number(scene.style.getPropertyValue('--thumb-progress')) || 0);
   let pending = [], field, width = 1, height = 1;
   let surfaceSize = '';
+  let scrolling=false,scrollTimer=0,geometry=null;
   const IDLE_GAP = 2000, SWEEP_DURATION = 2300, HANDOFF_DURATION = 220;
   let idleTimer = 0, cycle = null, cycles = 0, driver = 'none', currentFade = 0;
   let handoff = null, pointerBlend = 1;
@@ -241,8 +244,8 @@
     surface.dataset.renderer = 'canvas';
     return {surface, draw(state){
       const w = surface.width, h = surface.height;
-      mask.width = field.w; mask.height = field.h;
-      const pixels = maskCtx.createImageData(field.w,field.h);
+      if(mask.width!==field.w||mask.height!==field.h){mask.width=field.w;mask.height=field.h;}
+      const pixels = this.pixels?.width===field.w&&this.pixels?.height===field.h?this.pixels:(this.pixels=maskCtx.createImageData(field.w,field.h));
       for (let i = 0; i < field.n; i++) {
         const k = i*4;
         pixels.data[k]=117; pixels.data[k+1]=130; pixels.data[k+2]=143;
@@ -254,13 +257,15 @@
       if (!state.fade) return;
       const [x,y,rw,rh] = state.rect, args=[mask,-x/rw*w,-y/rh*h,w/rw,h/rh];
       ctx.globalCompositeOperation='destination-out';ctx.drawImage(...args);ctx.globalCompositeOperation='source-over';
-      layer.width=w;layer.height=h;layerCtx.drawImage(images[1],0,0,w,h);
+      if(layer.width!==w||layer.height!==h){layer.width=w;layer.height=h;}
+      else layerCtx.clearRect(0,0,w,h);
+      layerCtx.drawImage(images[1],0,0,w,h);
       layerCtx.globalCompositeOperation='destination-in';layerCtx.drawImage(...args);
       layerCtx.globalCompositeOperation='source-over';ctx.drawImage(layer,0,0);
     }};
   }
 
-  function interactive() {return ready && wanted && !failed && !document.hidden && !reduced.matches && thumbnail < .995;}
+  function interactive() {return ready && wanted && !scrolling && !failed && !document.hidden && !reduced.matches && thumbnail < .995;}
   function mode(value) {(renderer?.surface || canvas).dataset.mode = value;}
   function cancelIdle() {
     if (idleTimer) clearTimeout(idleTimer);
@@ -292,7 +297,7 @@
     progress=clamp(progress+lane.phase*Math.sin(progress*Math.PI));
     const angle=progress*Math.PI*2;
     const x=.5-lane.direction*.36*Math.cos(angle),y=lane.y+lane.bend*Math.sin(angle)+lane.warp*Math.sin(angle*2);
-    const p=portrait.getBoundingClientRect(),s=scene.getBoundingClientRect();
+    const [p,s]=geometry||[portrait.getBoundingClientRect(),scene.getBoundingClientRect()];
     return {x:(p.left-s.left+x*p.width)/s.width,y:(p.top-s.top+y*p.height)/s.height};
   }
   function idleStrokes(now,strength=1) {
@@ -322,7 +327,7 @@
   function draw(fade = 0) {
     if (!ready) return;
     currentFade=fade;
-    const p = portrait.getBoundingClientRect(), s = scene.getBoundingClientRect();
+    const [p,s]=geometry||[portrait.getBoundingClientRect(),scene.getBoundingClientRect()];
     const state = {fade:fade * (1-thumbnail)**2,
       rect:[(p.left-s.left)/s.width,(p.top-s.top)/s.height,p.width/s.width,p.height/s.height]};
     renderer.draw(state); airRenderer?.draw(state);
@@ -344,6 +349,8 @@
   function tick(now) {
     frame=0;
     if (!interactive()) return;
+    // One geometry read per rendered frame, shared by both ribbons/compositors.
+    geometry=[portrait.getBoundingClientRect(),scene.getBoundingClientRect()];
     const dt=previous ? clamp(now-previous,4,33.334) : 16.667;previous=now;
     pointerBlend=handoff?smooth((now-handoff.start)/HANDOFF_DURATION):1;
     const ambient=idleStrokes(now,handoff?1-pointerBlend:1);
@@ -352,25 +359,26 @@
       field.step(dt,[...(ambient?.strokes||[]),...strokes]);lastInput=now;
       draw(handoff.fade+(1-handoff.fade)*pointerBlend);mode('handoff');
       if (pointerBlend>=1) {handoff=null;cycle=null;mode('pointer');}
-      frame=requestAnimationFrame(tick);return;
+      geometry=null;frame=requestAnimationFrame(tick);return;
     }
     if (ambient) {
       field.step(dt,ambient.strokes);lastInput=now;
       draw(smooth(ambient.progress/.08));mode('ambient');
-      frame=requestAnimationFrame(tick);return;
+      geometry=null;frame=requestAnimationFrame(tick);return;
     }
     const age=now-lastInput;
-    if (age>=620) {stop('idle');armIdle();return;}
+    if (age>=620) {stop('idle');geometry=null;armIdle();return;}
     // Keep momentum evolving through the tail instead of freezing the field and
     // abruptly unfreezing it when a new pointer event arrives.
     field.step(dt,pending.splice(0));
     const fade=1-smooth((age-100)/500);
     draw(fade);mode(driver==='ambient'?'ambient-settling':age<100?'pointer':'settling');
-    frame=requestAnimationFrame(tick);
+    geometry=null;frame=requestAnimationFrame(tick);
   }
   function setActive(active) {
     if (wanted===!!active) return;
     wanted=!!active;
+    if(wanted&&!ready)initialize();
     stop(!wanted?'paused':reduced.matches?'static':thumbnail>=.995?'thumbnail':'idle');
     armIdle();
   }
@@ -386,7 +394,7 @@
     }
     if (next>=.995) {if (frame || (renderer.surface).dataset.mode!=='thumbnail') stop('thumbnail');}
     else {
-      draw(currentFade);
+      if(currentFade>0)draw(currentFade);
       if (!frame) mode(!wanted?'paused':reduced.matches?'static':'idle');
       armIdle();
     }
@@ -398,14 +406,15 @@
     if(key===surfaceSize)return;
     surfaceSize=key;
     width=nextWidth;height=nextHeight;
-    const long=Math.min(mobile.matches?132:192,Math.max(96,Math.round(Math.max(width,height)*.1)));
+    const light=lightweight();
+    const long=Math.min(light?96:160,Math.max(72,Math.round(Math.max(width,height)*.1)));
     field=new FlowField(Math.max(24,Math.round(long*width/Math.max(width,height))),Math.max(24,Math.round(long*height/Math.max(width,height))));
     if (!ready) return;
     const surface=renderer.surface,w=portrait.clientWidth,h=portrait.clientHeight;
-    const scale=Math.min(devicePixelRatio||1,1.5,Math.sqrt((mobile.matches?950000:1650000)/(w*h)));
+    const scale=Math.min(devicePixelRatio||1,light?1.25:1.5,Math.sqrt((light?420000:1400000)/(w*h)));
     surface.width=Math.round(w*scale);surface.height=Math.round(h*scale);
     if (airRenderer) {
-      const scale=Math.min(devicePixelRatio||1,1.25,Math.sqrt(1000000/(width*height)));
+      const scale=Math.min(devicePixelRatio||1,1,Math.sqrt((light?220000:750000)/(width*height)));
       airRenderer.surface.width=Math.round(width*scale);airRenderer.surface.height=Math.round(height*scale);
     }
     stop(!wanted?'paused':reduced.matches?'static':thumbnail>=.995?'thumbnail':'idle');
@@ -436,6 +445,13 @@
     if (pending.length && !frame) {previous=0;frame=requestAnimationFrame(tick);}
   },{passive:true});
   document.addEventListener('pointerleave',() => {lastPoint=null;});
+  // Native touch scrolling has priority over the ambient fluid simulation.
+  addEventListener('scroll',()=>{
+    if(!wanted)return;
+    if(!scrolling){scrolling=true;stop('scrolling');}
+    clearTimeout(scrollTimer);
+    scrollTimer=setTimeout(()=>{scrolling=false;ink?.setActive(interactive());armIdle();},160);
+  },{passive:true});
   document.addEventListener('visibilitychange',() => {
     stop(document.hidden||!wanted?'paused':reduced.matches?'static':'idle');armIdle();
   });
@@ -457,7 +473,10 @@
       const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=path;
     });
   }
-  Promise.all([loadImage(content.heroImage),loadImage(content.heroHelmetImage)]).then(loaded => {
+  function initialize(){
+  if(loading)return;loading=true;
+  const light=lightweight();
+  Promise.all([loadImage(light&&content.heroImageSmall||content.heroImage),loadImage(light&&content.heroHelmetImageSmall||content.heroHelmetImage)]).then(loaded => {
     images=loaded;renderer=webGL(canvas,portraitShader,true)||canvas2D(canvas,true);
     airRenderer=webGL(air,airShader,false)||canvas2D(air,false);
     if (!renderer) {canvas.remove();air.remove();return;}
@@ -466,4 +485,6 @@
     ink=window.HelmetInk?.mount(portrait);ink?.setThumbnail(thumbnail);ink?.setActive(interactive());
     new ResizeObserver(resize).observe(portrait);
   }).catch(() => {canvas.remove();air.remove();});
+  }
+  if(wanted)initialize();
 })();

@@ -51,7 +51,9 @@
   }
   function fillUserImage(container, path) {
     if (!path) return;
-    const img = $('.user-image', container); img.src = path;
+    const img = $('.user-image', container);
+    if(container===portrait&&content.heroImageSmall){img.srcset=`${content.heroImageSmall} 864w, ${path} 1448w`;img.sizes='(max-width:600px) 100vw, 1448px';}
+    img.src = path;
     img.addEventListener('load', () => { img.hidden = false; $('svg', container).style.visibility = 'hidden'; });
   }
   $('.wordmark>span').textContent = content.name[0];
@@ -67,7 +69,7 @@
     }));
   });
   $('.message-marquees').setAttribute('aria-label', content.message.lines.join(' / '));
-  fillUserImage(portrait, content.heroImage);
+  if(!/^#(?:work|life)(?:\/|$)/.test(location.hash))fillUserImage(portrait, content.heroImage);
   if (content.heroImage) $('.portrait-label').hidden = true;
   layout.forEach((l, i) => {
     const data = content.gallery[i] || { image: '', caption: `IMAGE / ${i + 2}` };
@@ -194,6 +196,8 @@
     const galleryEnter=smooth(range(t,4.3,5.2));
     const splitEnter=smooth(range(t,8,10));
     split.style.opacity=splitEnter;
+    const marqueeVisible=t>1.65&&t<5.3;
+    if(document.body.classList.contains('message-visible')!==marqueeVisible)document.body.classList.toggle('message-visible',marqueeVisible);
     if(t<5.3){
     const heroScale = mix(mix(photoHero ? .91 : 1.18, photoHero ? .80 : .95, heroP), mobile ? .55 : .64, thumb);
     const heroY = mix(mix(1, -4, heroP), photoHero ? (mobile ? 6 : 3) : (mobile ? -9 : -13), thumb);
@@ -282,7 +286,7 @@
       [hero,message,gallery,split].forEach((scene,i)=>{scene.inert=chapter!==i;scene.setAttribute('aria-hidden',String(chapter!==i));});
       ui.liveStatus.textContent=['01 / 开场','02 / 缩小画面','03 / 图片叙事','04 / 双栏入口'][chapter];
     }
-    const max=document.documentElement.scrollHeight-innerHeight;
+    const max=Math.max(1,unit*TOTAL_HEIGHT-innerHeight);
     progress.style.transform=`scaleX(${clamp(y/max)})`;
     hero.style.visibility=t>5.2?'hidden':'visible';
     message.style.visibility=t>5.3?'hidden':'visible';
@@ -384,6 +388,7 @@
     },
     resume(chapter = 'explore', savedScroll) {
       homeSuspended = false;
+      if(!$('.user-image',portrait).getAttribute('src'))fillUserImage(portrait,content.heroImage);
       unit = $('.scroll-space').offsetHeight / TOTAL_HEIGHT;
       portraitHeight = portrait.offsetHeight;
       current = target = savedScroll ?? (CHAPTERS[chapter] ?? CHAPTERS.explore) * unit / TIMELINE_SCALE;

@@ -8,6 +8,7 @@ w.matchMedia=()=>navMedia;
 w.eval(fs.readFileSync(path.join(root,'moneyball.js'),'utf8'));
 el.innerHTML=w.MoneyBallCaseStudy.render({footer:'',pagination:''});const cleanup=w.MoneyBallCaseStudy.mount(el);
 assert.equal(el.querySelectorAll('.mb-section').length,8);
+assert.equal(el.querySelectorAll('details').length,0,'all diagrams and photos are directly visible without expanding a panel');
 assert.deepEqual([...el.querySelectorAll('.mb-toc button')].map(x=>x.dataset.section),[...el.querySelectorAll('.mb-section')].map(x=>x.dataset.detailSection));
 const order=[...el.querySelectorAll('.mb-section')].map(x=>x.dataset.detailSection);
 assert.equal(el.querySelector('.mb-board').closest('.mb-section').dataset.detailSection,'moneyOrigin','the tabletop is introduced before the rules');
@@ -30,7 +31,7 @@ select('mb-pitch','drop');step(2);assert.match(status(),/挥空，记一次好�
 select('mb-cover','3');step(2);assert.match(status(),/普通击中/);assert.equal(q('[data-mb-step="2"]').getAttribute('aria-pressed'),'true');
 assert.equal(el.querySelector('.mb-next'),null);assert.doesNotMatch(el.textContent,/原型版本差异/);assert.match(el.textContent,/玩家会带着前几个打席的印象/);assert.match(el.textContent,/真实试玩照片尚未提供/);
 const dialog=d.querySelector('dialog');w.PortfolioHome={preview(src,caption){dialog.querySelector('.dialog-image').innerHTML=`<img src="${src}">`;dialog.querySelector('.dialog-label').textContent=caption;dialog.open=true;}};
-for(let i=0;i<2;i++){w.MoneyBallCaseStudy.openImage('assets/moneyball/image5.png','图解 A');assert.equal(dialog.querySelectorAll('.mb-zoom').length,1);const zoom=dialog.querySelector('.mb-zoom');zoom.click();assert.ok(dialog.querySelector('.dialog-image').classList.contains('mb-zoomed'));zoom.click();assert.ok(!dialog.querySelector('.dialog-image').classList.contains('mb-zoomed'));dialog.dispatchEvent(new w.Event('close'));assert.equal(dialog.querySelectorAll('.mb-zoom').length,0);assert.ok(!dialog.classList.contains('moneyball-lightbox'));}
+for(let i=0;i<2;i++){w.MoneyBallCaseStudy.openImage('assets/moneyball/image5.webp','图解 A');assert.equal(dialog.querySelectorAll('.mb-zoom').length,1);const zoom=dialog.querySelector('.mb-zoom');zoom.click();assert.ok(dialog.querySelector('.dialog-image').classList.contains('mb-zoomed'));zoom.click();assert.ok(!dialog.querySelector('.dialog-image').classList.contains('mb-zoomed'));dialog.dispatchEvent(new w.Event('close'));assert.equal(dialog.querySelectorAll('.mb-zoom').length,0);assert.ok(!dialog.classList.contains('moneyball-lightbox'));}
 const toc=el.querySelector('.mb-toc'),toggle=el.querySelector('.mb-toc-toggle');
 assert.equal(toc.inert,false,'desktop directory is accessible');
 navMedia.matches=true;navListeners.forEach(f=>f());assert.equal(toc.inert,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');

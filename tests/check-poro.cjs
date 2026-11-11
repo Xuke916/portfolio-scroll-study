@@ -1,3 +1,4 @@
+(async()=>{
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {JSDOM}=require('jsdom');
 const root=path.resolve(__dirname,'../dist');
@@ -19,27 +20,44 @@ assert.match(el.querySelector('.poro-facts').textContent,/5 人团队/);
 assert.match(el.querySelector('.poro-outcome').textContent,/最佳 IP 奖/);
 assert.equal(el.querySelectorAll('.poro-photo').length,26,'all 25 document visuals plus supplied cover are included');
 assert.equal(el.querySelectorAll('.poro-motion').length,10);
+assert.equal(el.querySelectorAll('details').length,0,'all project media is inline, including previously collapsed demos');
 for(const img of el.querySelectorAll('img')){
  assert.ok(img.alt&&img.width>0&&img.height>0);
  assert.ok(fs.statSync(path.join(root,img.getAttribute('src'))).size>0);
- if(img.dataset.motionSrc){
-  const bytes=fs.readFileSync(path.join(root,img.dataset.motionSrc));
-  assert.match(bytes.subarray(0,6).toString(),/^GIF8[79]a$/);
-  assert.equal(bytes.readUInt16LE(6),img.width);assert.equal(bytes.readUInt16LE(8),img.height);
-  assert.equal(img.getAttribute('src'),img.dataset.still,'animations start on still frames and require explicit play');
- }
+
 }
 assert.equal(el.querySelectorAll('.poro-awards figcaption').length,2);
 assert.ok([...el.querySelectorAll('.poro-awards figcaption')].every(x=>x.textContent.includes('AI 英文翻译展示版')));
 assert.equal(el.querySelector('.poro-pair a').href,'https://www.animalwell.net/');
 assert.ok(!el.textContent.includes('第一名'),'only the award stated in the new outline is claimed');
-const cleanup=w.PoroCaseStudy.mount(el),figure=el.querySelector('.poro-motion'),img=figure.querySelector('img'),button=figure.querySelector('button');
-button.click();assert.equal(img.getAttribute('src'),img.dataset.motionSrc);assert.equal(button.getAttribute('aria-pressed'),'true');
-observer.cb([{target:figure,isIntersecting:false}]);assert.equal(img.getAttribute('src'),img.dataset.still,'offscreen motion stops');
-observer.cb([{target:figure,isIntersecting:true}]);assert.equal(img.getAttribute('src'),img.dataset.motionSrc,'explicit playback resumes on return');
-d.dispatchEvent(new w.CustomEvent('portfolio:menu',{detail:{open:true}}));assert.equal(img.getAttribute('src'),img.dataset.still);
-d.dispatchEvent(new w.CustomEvent('portfolio:menu',{detail:{open:false}}));assert.equal(img.getAttribute('src'),img.dataset.motionSrc);
-const reduced=modes.get('(prefers-reduced-motion: reduce)');reduced.matches=true;reduced.listeners.forEach(fn=>fn());assert.equal(img.getAttribute('src'),img.dataset.still);assert.equal(button.getAttribute('aria-pressed'),'false');
+for(const video of el.querySelectorAll('video')){
+ assert.equal(video.getAttribute('preload'),'none');assert.ok(video.hasAttribute('muted')&&video.hasAttribute('loop')&&video.hasAttribute('playsinline'));
+ assert.equal(video.hasAttribute('src'),false,'offscreen media is not fetched');
+ const bytes=fs.readFileSync(path.join(root,video.dataset.motionSrc));assert.equal(bytes.subarray(4,8).toString(),'ftyp');
+ assert.ok(fs.statSync(path.join(root,video.poster.replace('https://portfolio.test/portfolio-scroll-study/',''))).size>0);
+}
+let hidden=false;Object.defineProperty(d,'hidden',{get:()=>hidden});
+Object.defineProperty(w.HTMLMediaElement.prototype,'paused',{get(){return this._paused!==false;}});
+w.HTMLMediaElement.prototype.play=function(){this._paused=false;this._plays=(this._plays||0)+1;return Promise.resolve();};
+w.HTMLMediaElement.prototype.pause=function(){this._paused=true;};w.HTMLMediaElement.prototype.load=function(){};
+const cleanup=w.PoroCaseStudy.mount(el),figure=el.querySelector('.poro-motion'),video=figure.querySelector('video'),button=figure.querySelector('button');
+const visible=value=>observer.cb([{target:figure,isIntersecting:value,intersectionRatio:value?1:0}]);
+assert.equal(video.hasAttribute('src'),false);visible(true);await new Promise(resolve=>setImmediate(resolve));
+assert.equal(video.paused,false,'entering the viewport automatically plays without a click');
+assert.equal(video.getAttribute('src'),video.dataset.motionSrc);assert.equal(button.getAttribute('aria-pressed'),'true');
+visible(false);assert.equal(video.paused,true);visible(true);await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,false);
+button.click();assert.equal(video.paused,true);visible(false);visible(true);assert.equal(video.paused,true,'user pause survives leaving and re-entering');
+button.click();await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,false);
+d.dispatchEvent(new w.CustomEvent('portfolio:menu',{detail:{open:true}}));assert.equal(video.paused,true);
+d.dispatchEvent(new w.CustomEvent('portfolio:menu',{detail:{open:false}}));await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,false);
+hidden=true;d.dispatchEvent(new w.Event('visibilitychange'));assert.equal(video.paused,true);
+hidden=false;d.dispatchEvent(new w.Event('visibilitychange'));await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,false);
+const reduced=modes.get('(prefers-reduced-motion: reduce)');reduced.matches=true;reduced.listeners.forEach(fn=>fn());assert.equal(video.paused,true);assert.equal(button.getAttribute('aria-pressed'),'false');
+reduced.matches=false;reduced.listeners.forEach(fn=>fn());await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,false);
+visible(false);let resolvePlay;video.play=function(){return new Promise(resolve=>resolvePlay=()=>{this._paused=false;resolve();});};
+visible(true);visible(false);resolvePlay();await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,true,'late autoplay cannot resume an offscreen video');
+video.play=()=>Promise.reject(new Error('Autoplay blocked'));visible(true);await new Promise(resolve=>setImmediate(resolve));assert.match(button.textContent,/播放演示/,'browser autoplay restrictions leave a usable fallback');
+video.play=w.HTMLMediaElement.prototype.play;button.click();await new Promise(resolve=>setImmediate(resolve));assert.equal(video.paused,false,'fallback can retry playback');
 const compact=modes.get('(max-width:1100px)'),toggle=el.querySelector('.poro-toc-toggle'),toc=el.querySelector('.poro-toc');compact.matches=true;compact.listeners.forEach(fn=>fn());assert.equal(toc.inert,true);
 toggle.click();assert.equal(toggle.getAttribute('aria-expanded'),'true');assert.equal(toc.inert,false);
 toc.querySelector('button').click();assert.equal(toggle.getAttribute('aria-expanded'),'false');
@@ -47,13 +65,13 @@ toggle.click();d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));as
 w.PoroCaseStudy.openImage('assets/poro/image8_light.jpg','安全下落边界');
 assert.ok(d.querySelector('dialog').classList.contains('poro-lightbox'));const zoom=d.querySelector('.poro-zoom');zoom.click();assert.equal(zoom.getAttribute('aria-pressed'),'true');assert.ok(d.querySelector('.dialog-image').classList.contains('poro-zoomed'));
 d.querySelector('dialog').dispatchEvent(new w.Event('close'));assert.equal(d.querySelectorAll('.poro-zoom').length,0);
-cleanup();assert.ok(disconnected);for(const mode of modes.values())assert.equal(mode.listeners.size,0);assert.equal(img.getAttribute('src'),img.dataset.still);button.click();assert.equal(img.getAttribute('src'),img.dataset.still,'unmounted controls release listeners');
+cleanup();assert.ok(disconnected);for(const mode of modes.values())assert.equal(mode.listeners.size,0);assert.equal(video.hasAttribute('src'),false);assert.equal(video.paused,true);button.click();assert.equal(video.hasAttribute('src'),false,'unmounted controls release listeners and media buffers');
 dom.window.close();
-console.log('PASS Poro: seven ordered chapters, all 26 visuals, exact GIF dimensions, authentic award labels, manual playback, offscreen/menu/reduced-motion pause, responsive directory, image zoom and cleanup');
+console.log('PASS Poro: seven ordered chapters, all 26 visuals, efficient MP4/posters, authentic award labels, in-view autoplay and manual pause, offscreen/menu/reduced-motion pause, responsive directory, image zoom and cleanup');
 
 // Exercise the real route with the new renderer, including return to the first cover.
 const page=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{url:'https://portfolio.test/portfolio-scroll-study/#work/project-01',runScripts:'outside-only',pretendToBeVisual:true});
-const v=page.window,p=v.document;let y=0,clock=0,serial=0;const frames=new Map();
+const v=page.window,p=v.document;v.HTMLMediaElement.prototype.pause=function(){};v.HTMLMediaElement.prototype.load=function(){};let y=0,clock=0,serial=0;const frames=new Map();
 Object.defineProperties(v,{innerWidth:{value:1280},innerHeight:{value:800},scrollY:{get:()=>y}});
 Object.defineProperty(v.HTMLElement.prototype,'offsetHeight',{get(){return this.id==='viewport-metric'?800:500;}});
 v.matchMedia=q=>({matches:q.includes('reduced-motion'),addEventListener(){},removeEventListener(){}});
@@ -68,3 +86,5 @@ p.querySelector('[data-project-index="0"]').click();flush();assert.ok(p.querySel
 assert.equal(p.querySelectorAll('#detail-section-navigation').length,1);assert.equal(p.querySelectorAll('[data-motion-figure]').length,10);
 p.querySelector('.poro-footer [data-footer-home]').click();flush();assert.equal(v.location.hash,'#intro');assert.equal(p.body.classList.contains('detail-mode'),false);
 page.window.close();console.log('PASS Poro direct hash route, cover entry, correct winter header, return to original cover, single directory and HOME cleanup');
+
+})().catch(error=>{console.error(error);process.exitCode=1;});

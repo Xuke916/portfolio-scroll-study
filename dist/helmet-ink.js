@@ -21,8 +21,8 @@
     'M633 312C649 307 679 307 698 310L703 316C679 313 651 313 636 317Z',
     'M740 330C755 333 771 343 781 354L782 360C768 348 754 340 741 337Z'
   ];
-  function buildMesh(){
-    const cols=56,rows=50,points=[],edges=[];
+  function buildMesh(light=false){
+    const cols=light?24:56,rows=light?22:50,points=[],edges=[];
     const noise=(i,j)=>Math.sin(i*71.73+j*39.19)*Math.cos(i*19.41-j*53.12);
     for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++){
       const u=i/cols,v=j/rows;
@@ -42,7 +42,8 @@
   function mount(portrait){
     const existing=portrait.querySelector('.hero-helmet-ink');if(existing)return existing.inkController;
     const id='helmet-ink-'+(++serial),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-    const mesh=buildMesh(),line=([a,b])=>`M${mesh.points[a].map(n=>n.toFixed(1)).join(' ')}L${mesh.points[b].map(n=>n.toFixed(1)).join(' ')}`;
+    const light=!!window.matchMedia?.('(max-width: 600px), (pointer: coarse)').matches || (navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<=4);
+    const mesh=buildMesh(light),line=([a,b])=>`M${mesh.points[a].map(n=>n.toFixed(1)).join(' ')}L${mesh.points[b].map(n=>n.toFixed(1)).join(' ')}`;
     svg.setAttribute('viewBox','0 0 1448 1086');svg.setAttribute('aria-hidden','true');
     svg.classList.add('hero-helmet-ink');svg.dataset.structure='photo-traced-wireframe';
     svg.innerHTML=`<defs>
@@ -52,7 +53,7 @@
         <stop offset=".60" stop-color="#343936" stop-opacity=".013"/>
         <stop offset=".85" stop-color="#343936" stop-opacity=".05"/>
         <stop offset="1" stop-color="#343936" stop-opacity=".105"/>
-        <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="0 130" dur="3.8s" repeatCount="indefinite"/>
+        ${light?'':'<animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="0 130" dur="3.8s" repeatCount="indefinite"/>'}
       </linearGradient>
     </defs>
     <g fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -66,12 +67,12 @@
       setActive(value){
         value=!!value;if(value===active)return;active=value;
         if(active)svg.unpauseAnimations?.();else svg.pauseAnimations?.();
-        svg.dataset.motion=active?'scanning':'paused';
+        svg.dataset.motion=active?(light?'static':'scanning'):'paused';
       },
       setThumbnail(progress){svg.style.opacity=String(Math.max(0,1-progress)**1.5);},
       remove(){svg.remove();}
     };
-    svg.dataset.motion='scanning';svg.inkController=controller;return controller;
+    svg.dataset.quality=light?'compact':'fine';svg.dataset.motion=light?'static':'scanning';svg.inkController=controller;return controller;
   }
   window.HelmetInk={mount,buildMesh,outline:{shell,shield,details}};
 })();

@@ -38,6 +38,7 @@ async function boot({reduce=false, detail=false, fail=false, pauseDuringLoad=fal
 (async()=>{
   for(const [width,height] of [[1280,720],[1200,1173],[390,844]]){
     const a=await boot({width,height}),c=a.d.querySelector('.hero-fluid-canvas');
+    if(width<=600){assert.ok(c.width*c.height<=422000,'mobile portrait GPU surface has a fixed pixel budget');assert.ok(a.d.querySelector('.hero-fluid-air').width*a.d.querySelector('.hero-fluid-air').height<=222000,'blank-space fluid has a separate small pixel budget');assert.ok(a.field.n<=96*96,'mobile simulation cannot grow with device pixel density');}
     assert.equal(c.dataset.renderer,'canvas');
     const initial=a.draws;a.step(119);
     assert.equal(a.draws,initial,'the two-second pause has no animation frames');assert.equal(a.queue.size,0);
@@ -112,6 +113,11 @@ async function boot({reduce=false, detail=false, fail=false, pauseDuringLoad=fal
     a.w.HeroFluid.setActive(false);assert.equal(a.queue.size,0);assert.equal(a.timers.size,0);a.w.close();
   }
   console.log('PASS single/double random passes, fresh per-cycle count, preserved field/momentum/frame, 220ms force overlap, continuous opacity and tail');
+  {
+    const a=await boot({width:390,height:844});a.step(135);const c=a.d.querySelector('.hero-fluid-canvas');
+    a.w.dispatchEvent(new a.w.Event('scroll'));assert.equal(c.dataset.mode,'scrolling');assert.equal(a.queue.size,0,'native scrolling suspends fluid work');
+    const draws=a.draws;a.step(8);assert.equal(a.draws,draws);a.step(3);assert.equal(a.queue.size,0,'after scroll ends the next ambient pass still waits for the idle gap');a.w.close();
+  }
   const b=await boot({fail:true});assert.equal(b.d.querySelector('canvas'),null);b.w.close();
   // Test the numerical field itself: direction, spatial locality, curved input,
   // bounded advection, aspect ratios and a second stroke in previously blank space.
