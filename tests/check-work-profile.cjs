@@ -1,0 +1,52 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {JSDOM}=require('jsdom');
+const root=path.resolve(__dirname,'../dist');
+const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{url:'https://portfolio.test/portfolio-scroll-study/#work',runScripts:'outside-only',pretendToBeVisual:true});
+const w=dom.window,d=w.document;let y=0,clock=0,id=0,frames=new Map();
+Object.defineProperties(w,{innerWidth:{value:390},innerHeight:{value:844},scrollY:{get:()=>y}});
+Object.defineProperty(d.documentElement,'scrollHeight',{get:()=>Number(d.querySelector('.detail-route')?.dataset.scrollHeight||844)});
+Object.defineProperty(w.HTMLElement.prototype,'offsetHeight',{get(){return this.id==='viewport-metric'?844:this.classList.contains('portrait-footer')?900:100;}});
+w.matchMedia=q=>({matches:!q.includes('reduced-motion')&&!q.includes('fine'),addEventListener(){}});
+w.performance.now=()=>clock;w.requestAnimationFrame=cb=>(frames.set(++id,cb),id);w.cancelAnimationFrame=i=>frames.delete(i);
+w.scrollTo=(x,top)=>{y=typeof x==='object'?x.top:top;w.dispatchEvent(new w.Event('scroll'));};
+w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
+for(const file of ['content.js','app.js','work-profile.js','pages.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));
+function flush(){for(let i=0;frames.size&&i<1200;i++){clock+=16.667;const jobs=[...frames.values()];frames.clear();jobs.forEach(cb=>cb(clock));}assert.equal(frames.size,0);}
+
+assert.ok(d.querySelector('.work-profile .wp-identity img'));
+assert.equal(d.querySelector('.wp-content').lang,'zh-CN');
+assert.equal(d.querySelectorAll('.wp-content ol li').length,7);
+assert.equal(d.querySelectorAll('.wp-content [data-project-route]').length,0);
+assert.equal(d.querySelectorAll('.wp-experience ol li').length,4);
+assert.equal(d.querySelectorAll('.wp-awards ol li').length,3);
+assert.equal(d.querySelector('.wp-awards h2').textContent,'获奖经历');
+assert.equal(d.querySelectorAll('.wp-notes section').length,1);
+const originalPhoto=d.querySelector('.wp-identity img');
+for(let i=0;i<3;i++){
+ const previousY=y;d.querySelector('[data-resume-language="en"]').click();flush();
+ assert.equal(y,previousY);assert.equal(d.querySelector('.wp-content').lang,'en');
+ assert.equal(d.querySelector('[data-resume-language="en"]').getAttribute('aria-pressed'),'true');
+ assert.equal(d.querySelectorAll('.wp-content ol li').length,7);
+ assert.match(d.querySelector('.wp-content').textContent,/Communication University of China/);
+ assert.match(d.querySelector('.wp-content').textContent,/combat design/);
+ assert.equal(d.querySelector('.wp-awards h2').textContent,'Awards & recognition');
+ assert.equal(d.querySelector('.wp-identity img'),originalPhoto);
+ d.querySelector('[data-resume-language="zh"]').click();flush();
+ assert.match(d.querySelector('.wp-content').textContent,/学习与经历/);
+ assert.equal(d.querySelectorAll('.wp-language').length,1);
+}
+d.querySelector('[data-resume-language="en"]').click();flush();
+d.querySelector('[data-project-index="1"]').click();flush();
+assert.equal(w.location.hash,'#work/project-02');
+d.querySelector('[data-back-projects]').click();flush();
+assert.equal(d.querySelector('.wp-content').lang,'en');
+assert.equal(d.querySelector('.project-current').textContent,'02');
+w.PortfolioPages.open('life');flush();
+assert.equal(d.querySelector('.life-about'),null);
+assert.equal(d.querySelector('[data-detail-section="profile"]'),null);
+assert.ok(d.querySelector('.life-editorial-photo'));
+assert.equal(d.querySelectorAll('.life-team .project-panel').length,17);
+assert.equal(d.querySelectorAll('.life-moments:not(.life-team) .project-panel').length,15);
+assert.equal(d.querySelector('.wp-language'),null);
+dom.window.close();
+console.log('PASS resume: moved to work hero, supplied avatar, four experience and three award entries, repeatable position-preserving language switch, project covers/return language, life photos retained without duplicate resume');

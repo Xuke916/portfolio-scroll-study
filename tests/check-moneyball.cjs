@@ -19,7 +19,9 @@ assert.match(el.querySelector('.mb-rule-flow').textContent,/好坏球也是在�
 assert.match(el.querySelector('.mb-roster-example').textContent,/数值仅用于说明，非具体卡牌数据/);
 assert.match(el.querySelector('.mb-roster-example').textContent,/所有相关球员都失败/);
 assert.equal(el.querySelectorAll('.portrait-footer').length,0,'case study ends with compact reading navigation');
-const imgs=[...el.querySelectorAll('.mb-photo img')];assert.equal(imgs.length,20);
+const imgs=[...el.querySelectorAll('.mb-photo img')];assert.equal(imgs.length,21);
+assert.match(imgs[0].getAttribute('src'),/photos\/title\.webp$/,'new title graphic is the first image');
+assert.match(el.querySelector('[data-detail-section="moneyOrigin"] .mb-board img').getAttribute('src'),/image16\.webp$/,'illustrated field is retained');
 for(const img of imgs){assert.ok(img.alt&&img.width&&img.height);const local=fs.readFileSync(path.join(root,img.getAttribute('src')));assert.ok(local.length>0,'case-study photo exists in the deployed source');}
 const demo=el.querySelector('.mb-demo'),q=s=>demo.querySelector(s),status=()=>q('.mb-demo-status').textContent;
 const select=(name,value)=>{const input=q(`[name="${name}"][value="${value}"]`);input.checked=true;input.dispatchEvent(new w.Event('change',{bubbles:true}));};
@@ -29,7 +31,7 @@ step(1);assert.match(status(),/覆盖中央三个相连格子/);step(2);assert.m
 select('mb-cover','1');assert.match(status(),/起始标记/);step(2);assert.match(status(),/全垒打/);assert.match(status(),/不经过普通守备判定/);
 select('mb-pitch','drop');step(2);assert.match(status(),/挥空，记一次好球/);
 select('mb-cover','3');step(2);assert.match(status(),/普通击中/);assert.equal(q('[data-mb-step="2"]').getAttribute('aria-pressed'),'true');
-assert.equal(el.querySelector('.mb-next'),null);assert.doesNotMatch(el.textContent,/原型版本差异/);assert.match(el.textContent,/玩家会带着前几个打席的印象/);assert.match(el.textContent,/真实试玩照片尚未提供/);
+assert.equal(el.querySelector('.mb-next'),null);assert.doesNotMatch(el.textContent,/原型版本差异/);assert.match(el.textContent,/玩家会带着前几个打席的印象/);assert.match(el.textContent,/试玩现场/);
 const dialog=d.querySelector('dialog');w.PortfolioHome={preview(src,caption){dialog.querySelector('.dialog-image').innerHTML=`<img src="${src}">`;dialog.querySelector('.dialog-label').textContent=caption;dialog.open=true;}};
 for(let i=0;i<2;i++){w.MoneyBallCaseStudy.openImage('assets/moneyball/image5.webp','图解 A');assert.equal(dialog.querySelectorAll('.mb-zoom').length,1);const zoom=dialog.querySelector('.mb-zoom');zoom.click();assert.ok(dialog.querySelector('.dialog-image').classList.contains('mb-zoomed'));zoom.click();assert.ok(!dialog.querySelector('.dialog-image').classList.contains('mb-zoomed'));dialog.dispatchEvent(new w.Event('close'));assert.equal(dialog.querySelectorAll('.mb-zoom').length,0);assert.ok(!dialog.classList.contains('moneyball-lightbox'));}
 const toc=el.querySelector('.mb-toc'),toggle=el.querySelector('.mb-toc-toggle');
@@ -39,11 +41,11 @@ toggle.click();assert.equal(toc.inert,false);assert.ok(toc.classList.contains('i
 toc.querySelector('[data-section="moneyTesting"]').click();assert.equal(toc.inert,true,'choosing a chapter collapses the compact directory');
 toggle.click();d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(toc.inert,true);assert.equal(d.activeElement,toggle);
 navMedia.matches=false;navListeners.forEach(f=>f());assert.equal(toc.inert,false,'desktop layout restores the directory');
-assert.equal(el.querySelectorAll('[data-playtest-slot]').length,4);assert.equal(el.querySelectorAll('.mb-playtest-empty').length,4);assert.equal(el.querySelectorAll('.mb-playtest-gallery img').length,0,'empty slots never fake a playtest photo');
+assert.equal(el.querySelectorAll('[data-playtest-slot]').length,4);assert.equal(el.querySelectorAll('.mb-playtest-empty').length,0);assert.equal(el.querySelectorAll('.mb-playtest-gallery img').length,4,'supplied playtest photos appear directly');
 cleanup();assert.equal(navListeners.size,0,'leaving the case study releases viewport listeners');
 w.PORTFOLIO_CONTENT={pages:{work:{projects:[{},{},{playtestPhotos:[{image:'assets/moneyball/image2.jpeg',title:'试玩全景',caption:'桌面布局'},{image:'',title:'投打操作'},{image:'',title:'守备与跑垒'},{image:'',title:'测试交流'}]}]}}};
 el.innerHTML=w.MoneyBallCaseStudy.render({footer:'',pagination:''});assert.equal(el.querySelectorAll('.mb-playtest-gallery img').length,1);assert.equal(el.querySelectorAll('.mb-playtest-empty').length,3);assert.equal(el.querySelector('.mb-playtest-gallery [data-money-image]').dataset.moneyImage,'assets/moneyball/image2.jpeg','a future photo uses the existing enlarge viewer');
-console.log('PASS eight ordered chapters, 19 original assets plus updated diagram, source integrity and semantic image labels');
+console.log('PASS eight ordered chapters, title cover, illustrated field, source integrity and semantic image labels');
 console.log('PASS demonstration stages, straight/drop pitches, one/three-cell consequences and accessible result updates');
 console.log('PASS version differences, honest pending materials, evidence limits and repeatable image zoom cleanup');
 console.log('PASS desktop/compact directory, chapter selection, Escape, breakpoint changes, cleanup and four replaceable photo slots');

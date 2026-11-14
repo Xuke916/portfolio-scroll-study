@@ -33,12 +33,20 @@ const { window } = dom;
 window.eval(fs.readFileSync(path.join(dist, 'content.js'), 'utf8'));
 window.eval(fs.readFileSync(path.join(dist, 'moneyball.js'), 'utf8'));
 window.eval(fs.readFileSync(path.join(dist, 'poro.js'), 'utf8'));
+window.eval(fs.readFileSync(path.join(dist, 'rewinder.js'), 'utf8'));
+window.eval(fs.readFileSync(path.join(dist, 'work-profile.js'), 'utf8'));
+const resumeContainer=window.document.createElement('div');
+resumeContainer.innerHTML=window.WorkProfile.render();
+window.document.body.append(resumeContainer);
 const caseContainer = window.document.createElement('div');
 caseContainer.innerHTML = window.MoneyBallCaseStudy.render({ footer: '', pagination: '' });
 window.document.body.append(caseContainer);
 const poroContainer=window.document.createElement('div');
 poroContainer.innerHTML=window.PoroCaseStudy.render({pagination:''});
 window.document.body.append(poroContainer);
+const rewinderContainer=window.document.createElement('div');
+rewinderContainer.innerHTML=window.RewinderCaseStudy.render({pagination:''});
+window.document.body.append(rewinderContainer);
 const assetPaths = new Set();
 function checkReference(value, from = 'index.html') {
   if (!value || /^(?:#|data:|https?:|mailto:|tel:|blob:)/.test(value)) return;
@@ -51,7 +59,7 @@ function checkReference(value, from = 'index.html') {
   assetPaths.add(path.relative(dist, absolute));
 }
 for (const el of window.document.querySelectorAll('script[src],img[src],video[src],source[src],link[href]')) checkReference(el.getAttribute('src') || el.getAttribute('href'));
-for (const el of window.document.querySelectorAll('[data-motion-src],[data-poro-image]')) checkReference(el.dataset.motionSrc || el.dataset.poroImage);
+for (const el of window.document.querySelectorAll('[data-motion-src],[data-poro-image],[data-rewinder-image]')) checkReference(el.dataset.motionSrc || el.dataset.poroImage || el.dataset.rewinderImage);
 for (const el of window.document.querySelectorAll('video[poster]')) checkReference(el.getAttribute('poster'));
 for (const el of window.document.querySelectorAll('img[srcset]')) for(const candidate of el.getAttribute('srcset').split(',')) checkReference(candidate.trim().split(/\s+/)[0]);
 function contentAssets(value) {
@@ -71,7 +79,7 @@ for (const absolute of files.filter(file => file.endsWith('.js'))) {
   assert.equal(syntax.status, 0, `JavaScript syntax: ${path.basename(absolute)}`);
 }
 console.log(`PASS ${files.length} deployable files, ${assetPaths.size} local resource references, repository-subpath compatibility; video elements: ${videoCount}`);
-for (const test of ['check-scroll.cjs', 'check-responsive.cjs', 'check-fluid.cjs', 'check-helmet.cjs', 'check-moneyball.cjs', 'check-poro.cjs']) {
+for (const test of ['check-scroll.cjs', 'check-responsive.cjs', 'check-fluid.cjs', 'check-helmet.cjs', 'check-moneyball.cjs', 'check-poro.cjs', 'check-life.cjs', 'check-rewinder.cjs', 'check-work-profile.cjs']) {
   const result = spawnSync(process.execPath, [path.join(root, 'tests', test)], { cwd: root, stdio: 'inherit' });
   assert.equal(result.status, 0, test);
 }

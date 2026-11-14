@@ -220,8 +220,10 @@ for(const [width,height,reduce] of [[1600,900,false],[390,844,false],[1600,900,t
  d.querySelector('.footer-pages [data-open-page="life"]').click();flush();
  assert.equal(d.body.dataset.page,'life');assert.equal(d.querySelector('.detail-hero-title').textContent,'日常生活');
  assert.equal(d.body.classList.contains('detail-light'),true,'daily life uses its light theme');
- assert.equal(d.querySelectorAll('.project-panel').length,3,'daily life keeps its existing moments');
- assert.equal(d.querySelectorAll('.detail-collage-card').length,4,'daily life retains its separate visuals section');
+ assert.equal(d.querySelectorAll('[data-horizontal-id="projects"] .project-panel').length,15,'daily life omits the removed hero photographs');
+ assert.equal(d.querySelectorAll('[data-horizontal-id="projects"] .life-group-nav button').length,5,'life photographs have five remaining category shortcuts');
+ assert.equal(d.querySelectorAll('[data-horizontal-id="team"] .project-panel').length,17,'team has its own photo collection');
+ assert.equal(d.querySelectorAll('.detail-collage-card').length,0,'the selected daily-record collage is removed');
  d.querySelector('.detail-back').click();flush();
  assert.equal(d.body.classList.contains('detail-mode'),false);assert.equal(w.location.hash,'#explore');
  assert.equal(d.querySelector('.split-scene').inert,false);assert.equal(d.body.style.overflow,'');

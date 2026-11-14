@@ -73,4 +73,4 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - name: Verify public page and every deployed file
-        run: node scripts/verify-live.mjs "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+        run: node scripts/verify-live.mjs "https://${{ github.repository_owner }}.github.io/"

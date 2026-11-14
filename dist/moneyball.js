@@ -1,13 +1,14 @@
 (() => {
  'use strict';
- const asset=n=>n===14?'assets/moneyball/defense-flow-v3.webp':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'webp':'jpeg'}`;
+ const asset=n=>typeof n==='string'?`assets/moneyball/photos/${n}.webp`:n===14?'assets/moneyball/defense-flow-v3.webp':`assets/moneyball/image${n}.${[5,7,10,13,15,16].includes(n)?'webp':'jpeg'}`;
  const sizes={1:[1702,1276],2:[1702,1276],3:[1280,1707],4:[1280,1707],5:[3750,1850],6:[1280,1707],7:[3750,1975],8:[1280,1707],9:[960,1280],10:[3750,1850],11:[1280,1707],12:[960,1280],13:[3750,2225],14:[3750,1850],15:[3750,1975],16:[1461,1076],17:[1280,1707],18:[960,1280],19:[1280,1707],20:[1280,1707]};
  sizes[14]=[1536,1024];
+ Object.assign(sizes,{"title": [1600, 1118], "hero": [1536, 1024], "components": [1600, 1067], "player": [1600, 2400], "lineup": [1600, 1067], "test-layout": [1600, 1067], "ui": [1600, 1067], "box": [1600, 1067], "manager": [1600, 1067], "player-set": [1600, 1067], "pitch": [1600, 1067], "hit": [1600, 1067], "pitch-play": [1600, 1067], "test-pov": [1600, 1067], "grid": [1600, 1067], "test": [1600, 1067], "tokens": [1600, 1067], "board": [1600, 1067]});
  const chapters=[['projectHero','项目概览'],['moneyOrigin','桌面与组件'],['moneyRules','一球到一场'],['moneyPrediction','投打预测'],['moneyDefense','守备与阵容'],['moneySimplification','规则迭代'],['moneyMaterial','实体制作'],['moneyTesting','试玩与收获']];
  function photo(n,alt,caption,cls=''){
   const [w,h]=sizes[n];
-  const variants=[480,960].filter(width=>width<w).map(width=>`assets/moneyball/image${n}-${width}.webp ${width}w`);
-  return `<figure class="mb-photo ${cls}"><button class="mb-image-button" data-money-image="${asset(n)}" data-caption="${caption}" aria-label="放大查看：${alt}"><img src="${asset(n)}" srcset="${[...variants,`${asset(n)} ${w}w`].join(', ')}" sizes="(max-width:600px) 86vw, (max-width:1100px) 88vw, 1040px" width="${w}" height="${h}" alt="${alt}" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button><figcaption>${caption}</figcaption></figure>`;
+  const variants=[480,960].filter(width=>width<w).map(width=>`${typeof n==='string'?'assets/moneyball/photos/'+n:'assets/moneyball/image'+n}-${width}.webp ${width}w`);
+  return `<figure class="mb-photo ${cls}${typeof n==='string'?' mb-new-photo':''}"><button class="mb-image-button" data-money-image="${asset(n)}" data-caption="${caption}" aria-label="放大查看：${alt}"><img src="${asset(n)}" srcset="${[...variants,`${asset(n)} ${w}w`].join(', ')}" sizes="(max-width:600px) 86vw, (max-width:1100px) 88vw, 1040px" width="${w}" height="${h}" alt="${alt}" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button><figcaption>${caption}</figcaption></figure>`;
  }
  const pair=(a,b,altA,altB,captionA,captionB)=>`<div class="mb-pair">${photo(a,altA,captionA)}${photo(b,altB,captionB)}</div>`;
  const note=(label,text)=>`<aside class="mb-note"><span class="mono">${label}</span><p>${text}</p></aside>`;
@@ -16,10 +17,10 @@
  function playtestGallery(){
   const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const items=window.PORTFOLIO_CONTENT?.pages.work.projects[2].playtestPhotos||[
-   {image:'',title:'试玩全景',caption:'双人对局与桌面布局'},
-   {image:'',title:'投打操作',caption:'标记、预测与揭牌的过程'},
-   {image:'',title:'守备与跑垒',caption:'掷骰判定与跑者推进'},
-   {image:'',title:'测试交流',caption:'规则确认与玩家反馈'}
+   {image:'assets/moneyball/photos/test.webp',title:'试玩全景',caption:'双人对局与桌面布局'},
+   {image:'assets/moneyball/photos/test-pov.webp',title:'投打操作',caption:'玩家选择球种并准备揭牌'},
+   {image:'assets/moneyball/photos/test-layout.webp',title:'阵容配置',caption:'球员卡与守备位置的对应'},
+   {image:'assets/moneyball/photos/grid.webp',title:'位置标记',caption:'在可擦写格子卡上记录投打选择'}
   ];
   return `<div class="mb-playtest-gallery" aria-label="试玩照片">${items.map((item,i)=>`<figure class="mb-playtest-photo" data-playtest-slot="${i}">${item.image?`<button class="mb-image-button" data-money-image="${esc(item.image)}" data-caption="${esc(item.title+' · '+item.caption)}" aria-label="放大查看：${esc(item.title)}"><img src="${esc(item.image)}" alt="${esc(item.title)}" width="1600" height="1067" loading="lazy" decoding="async"><span class="mb-enlarge" aria-hidden="true">↗</span></button>`:`<div class="mb-playtest-empty" role="img" aria-label="${esc(item.title)}照片预留位置"><span class="mono">PHOTO / ${String(i+1).padStart(2,'0')}</span><span class="mb-slot-cross" aria-hidden="true"></span><span>照片待补充</span></div>`}<figcaption><strong>${esc(item.title)}</strong><span>${esc(item.caption)}</span></figcaption></figure>`).join('')}</div>`;
  }
@@ -35,15 +36,15 @@
     <span class="mb-chapter mono">PERSONAL PROJECT 03 / 2025</span><h1 class="project-detail-title" tabindex="-1">Money <em>Ball</em></h1><p class="mb-hero-summary">把棒球里的投打判断，做成两个人的桌面对抗。</p>
     <p class="mb-intro">我喜欢棒球里上一球失误后，下一球还能重新判断的过程。Money Ball 把投球、挥棒和守备拆成桌面步骤：玩家看见投手的标记，猜测尚未公开的球种，再决定要不要挥棒。球员卡采用我的校队队友形象；我在这个项目中投入最多的是机制设计与卡牌构筑。</p>
     <dl class="mb-facts"><div><dt>类型 / 人数</dt><dd>棒球策略桌游 / 2 人</dd></div><div><dt>当前时长</dt><dd>约 25–30 分钟</dd></div><div><dt>开发时间</dt><dd>2025.02 — 06</dd></div><div><dt>个人工作</dt><dd>机制、卡牌、规则、美术与印刷<br>Photoshop / Word</dd></div></dl>
-    <div class="mb-hero-cover">${photo(2,'Money Ball 开箱总览，包含图板、卡牌、筹码和可擦写笔','实体原型 · 图板记录比赛，卡牌决定选择，可擦写笔用于标记投打位置')}</div>
+    <div class="mb-hero-cover">${photo('title','Money Ball 项目封面','MONEY BALL')}${photo('hero','Money Ball 实体套装总览','实体原型 · 图板、卡牌、筹码与可擦写投打格子卡')}</div>
     <div class="mb-reading-links"><button data-section="moneyOrigin">桌游物件</button><button data-section="moneyRules">投打规则</button></div>
    </section>
    ${section('moneyOrigin','02','ON THE TABLE','游戏发生在这张桌面上','一人进攻、一人防守。图板记录全队的局面，格子卡处理当前这一球。',`
-    ${photo(16,'游玩图板，展示守备位置、垒包、好坏球和出局数以及事件卡区','原型图板 · 先安排守备位置，再在比赛中移动跑者、记录球数','mb-board')}
+    ${photo(16,'Money Ball 原型图板及守备位置','原型图板 · 先安排守备位置，再在比赛中移动跑者、记录球数','mb-board')+pair('components','tokens','Money Ball 实体组件总览','好球、坏球及出局数标记','桌游组件 · 图板、卡牌与规则书','比赛标记 · 好球、坏球与出局数')}
     <ol class="mb-board-guide"><li><strong>守备位置</strong><p>白色圆点对应九个位置。球员卡放到相应位置后，该球员的守备力与技能会参与之后的判定。</p></li><li><strong>跑者与比分</strong><p>菱形是垒包。安打让跑者推进；经过一垒、二垒、三垒回到本垒，每名跑者得 1 分。</p></li><li><strong>当前状态</strong><p>左下记录好球、坏球和出局数；右侧放公开事件卡。达到第三好球、第四坏球或第三出局时，触发相应结算。</p></li></ol>
     <div class="mb-prose"><h3>这一球，另用格子卡来判断</h3><p>投手在格子卡上标记起始位置，打者在自己的格子卡上画出挥棒范围。双方揭牌后，比较<strong>最终落点</strong>与<strong>打击覆盖</strong>，再把上垒、出局等结果记回图板。</p></div>
     <div class="mb-zone-primer"><div class="mb-zone-grid">${zone}</div><div><h3>先认识好球区与坏球区</h3><p>中央 3 × 3 的九格是<strong>好球区</strong>，外侧十二格是<strong>坏球区</strong>。这里先表示位置；这一球记好球还是坏球，还要等打者决定是否挥棒、揭牌得到最终落点后才知道。</p><p class="mb-small">下文用蓝框标出中央九格。实体原型的边框颜色不同，判定区域相同。</p></div></div>
-    ${extra('查看格子卡实拍与图板缩写',photo(6,'使用可擦写笔标记投打格子卡','投打格子卡实拍 · 每球结算后擦除标记，再继续使用')+`<dl class="mb-glossary"><div><dt>P / C</dt><dd>投手 / 捕手</dd></div><div><dt>1B / 2B / 3B / SS</dt><dd>一垒手 / 二垒手 / 三垒手 / 游击手</dd></div><div><dt>LF / CF / RF</dt><dd>左 / 中 / 右外野手</dd></div><div><dt>STRIKES / BALLS / OUTS</dt><dd>好球 / 坏球 / 出局数</dd></div></dl>`)}
+    ${extra('查看格子卡实拍与图板缩写',photo('grid','使用可擦写笔标记投打格子卡','投打格子卡实拍 · 每球结算后擦除标记，再继续使用')+`<dl class="mb-glossary"><div><dt>P / C</dt><dd>投手 / 捕手</dd></div><div><dt>1B / 2B / 3B / SS</dt><dd>一垒手 / 二垒手 / 三垒手 / 游击手</dd></div><div><dt>LF / CF / RF</dt><dd>左 / 中 / 右外野手</dd></div><div><dt>STRIKES / BALLS / OUTS</dt><dd>好球 / 坏球 / 出局数</dd></div></dl>`)}
    `)}
    ${section('moneyRules','03','HOW TO PLAY','从一球，走到一场比赛','故事从 Game 7 第七局、0 : 0 开始。双方各带一支球队，打完最后三局后，得分更高的一方获胜。',`
     <p class="mb-prose">开局先排好九名首发、一名替补，确定棒次与守备位置。下面按玩家实际操作的先后顺序，说明一次投打怎样进行。</p>
@@ -60,9 +61,9 @@
     ${demo()}
     <div class="mb-prose"><h3>标记提供线索，球种保留变化</h3><p>如果投手直接公开最终落点，打者只要照着画格子。因此，这套规则先公开起始标记，最后再揭球种：同一个标记，可以留在原位，也可能因球种移动。</p><p>前几球也会影响判断。同样的标记上次用了变化球，这次会不会重复？投手同样可以利用打者已经形成的预期。</p></div>
     ${extra('展开投打顺序与球路图解',photo(5,'展示标记、打者回应、揭晓球种的三阶段流程图','图解 A · 展示标记 → 打者回应 → 揭牌结算','mb-diagram')+photo(7,'相同起始标记在位置不变和下移球路中的落点差异','图解 B · 球种决定最终落点，实际变化按球种与技能结算','mb-diagram'))}
-    ${pair(8,9,'球种卡正面及变化效果','球种卡背面的棒球符号','球种卡正面 · 阅读变化效果','球种卡背面 · 扣住时保留隐藏信息')}
+    ${pair('pitch','pitch-play','球种卡的球路说明','玩家在对局中选择球种卡','球种卡 · 根据卡面读取球路变化','投球选择 · 扣住卡牌，保留隐藏信息')}
     <div class="mb-subsection"><h3>画三格还是一格，收益也不同</h3><div class="mb-risk"><div><strong>三格</strong><p>覆盖更多可能落点，争取先击中。</p><p>命中后仍要经过守备判定，相关球员全部失败才形成安打。</p></div><div><strong>一格</strong><p>只赌一个位置，要求更精确的预测。</p><p>一旦命中，直接全垒打，该打者得 1 分，不经过普通守备判定。</p></div></div>
-    ${extra('查看覆盖范围图解与击球卡原型',photo(10,'三格与一格打击覆盖的风险收益对比','图解 C · 覆盖范围与命中收益','mb-diagram')+pair(11,12,'击球卡正面，包含旧版四格文字','击球卡背面的球棒符号','击球卡正面 · 打击、触击与选球','击球卡背面 · 球棒符号区分用途'))}
+    ${extra('查看覆盖范围图解与击球卡原型',photo(10,'三格与一格打击覆盖的风险收益对比','图解 C · 覆盖范围与命中收益','mb-diagram')+photo('hit','打击与触击卡的效果说明','击球卡 · 打击、触击与选球'))}
     </div>
     <div class="mb-subsection"><h3>球数会改变同一个选择的代价</h3><div class="mb-scenario"><h4>例如：两好球，三坏球</h4><p>再一次好球就三振，再一次坏球就保送。投手展示好球区下沿的标记：球可能留在框内，也可能移到框外。</p><p><strong>不挥棒</strong>：框外球带来保送，框内球却让打者三振。<br><strong>挥棒</strong>：猜中落点有机会击出；猜错即使落在框外，也会因挥空而三振。</p></div><p class="mb-prose">我希望前几球留下的经验能进入下一次判断。球数改变了失败的代价，同一个标记就不再只有一种应对。</p>${extra('复查好坏球的判定图',photo(13,'挥空记好球，不挥棒按最终落点判定好坏球','图解 D · 好坏球在揭牌得到最终落点后结算','mb-diagram'))}</div>
    `)}
@@ -70,7 +71,7 @@
     <div class="mb-prose"><p>一格命中直接全垒打。其余普通击中，需要先按击球方向和击球卡规则，找到相应守备球员；每名相关球员掷六面骰，<strong>骰子点数 ≤ 当前守备力，就守备成功</strong>。</p></div>
     <ol class="mb-defense-flow"><li>确定方向与相关球员</li><li>读取球员卡上的守备力与技能</li><li>掷骰，比较当前守备力</li></ol><div class="mb-outcomes"><div><b>至少一人守备成功</b><p>击球员出局</p></div><div><b>全部守备失败</b><p>形成安打，安全上垒</p></div></div>
     <div class="mb-roster-example"><span class="mb-chapter mono">判定示例 / 数值仅用于说明，非具体卡牌数据</span><h3>同样掷出 3，换一个球员，结果就不同</h3><div class="mb-example-lines"><p><strong>当前守备力 2</strong><span>3 ＞ 2 → 该球员守备失败</span></p><p><strong>当前守备力 4</strong><span>3 ≤ 4 → 该球员守备成功</span></p></div><p>若这一方向只有一名相关守备球员，前一种情况形成安打，后一种情况让打者出局。若有多人参与，则必须所有相关球员都失败，才形成安打。</p></div>
-    ${pair(3,4,'以校队队友为原型，具有不同位置与能力的球员卡','球衣与队徽主题的球员卡背面','球员卡正面 · 人物、位置、能力与技能','球员卡背面 · 球衣与球队标志')}
+    ${pair('player','player-set','许可信息与能力的球员卡','不同能力的球员卡','球员卡 · 人物、位置与技能','球员卡组 · 不同球员形成不同阵容')+photo('lineup','玩家调整球员卡与位置标记','阵容配置 · 安排球员与守备位置')}
     <div class="mb-prose"><h3>阵容调整因此有了实际用途</h3><p>玩家不仅要判断这一球能否击中，也要留意它会打向哪里、那里由谁守备。防守方在每个攻守回合开始时，可以调整位置或换上一名替补；替补接替原来的棒次。调整后，该方向参与判定的球员和能力也会变化。</p><p>球员卡来自我的校队，但我希望他们在游戏里也有不同作用。守备力与技能让“选谁上场”产生规则上的后果，而不只是在图板上换一张照片。</p></div>
     ${extra('查看守备分支与跑垒得分图解',photo(14,'普通击中后，依据相关球员守备力决定出局或安打','图解 E · 普通击中后的守备分支；一格命中不走这一流程','mb-diagram')+photo(15,'一垒打时打者与垒上队友的推进路径','图解 F · 一垒打：打者上一垒，队友各推进一垒；回本垒得分','mb-diagram'))}
    `)}
@@ -80,13 +81,13 @@
    `)}
    ${section('moneyMaterial','07','PHYSICAL PROTOTYPE','卡牌UI','我独立完成机制、卡牌内容、规则、美术与印刷。制作实体时，先区分卡片用途，再组织正面的具体效果。',`
     <ul class="mb-component-list"><li><strong>棒球符号 → 球种卡</strong><span>暗选球路，揭牌时确定变化。</span></li><li><strong>球棒符号 → 击球卡</strong><span>选择打击、触击或选球。</span></li><li><strong>黄底感叹号 → 事件卡</strong><span>打席开始时公开的临时条件。</span></li></ul>
-    ${pair(17,18,'事件卡正面的名称、示意图与规则文字','黄底感叹号主题的事件卡背面','事件卡正面 · 临时效果','事件卡背面 · 先辨认类型')}
+    ${photo('ui','规则书中球员卡、经理卡与格子卡的说明','卡牌 UI · 将能力、位置与技能说明对应到卡面')}
     <div class="mb-prose"><p>卡背负责让玩家在整理、取牌时分清用途；正面再解释效果。事件卡先公开，双方才知道这一打席有什么变化，然后进入投打选择。</p><h3>让校队经历落在具体人物上</h3><p>球员卡保留队友的照片、姓名、位置与能力；经理卡以球队经理为原型，延续球队标志。它们让这套原型与我的棒球经历保持联系。</p></div>
-    ${extra('查看经理卡与封面盒',pair(19,20,'以球队经理为原型的经理卡正面','球队标志主题的经理卡背面','经理卡正面 · 真实人物形象','经理卡背面 · 延续球队标志')+photo(1,'Money Ball 手工封面盒','封面盒实拍 · 手工制作的实体原型'))}
+    ${extra('查看经理卡与封面盒',pair('manager','box','以球队成员为原型的经理卡','Money Ball 手工封面盒','经理卡 · 不同人物与回合技能','封面盒 · 手工制作的实体原型'))}
    `)}
    ${section('moneyTesting','08','PLAYTEST & REFLECTION','测试','四轮当面双人测试，参与者分别有不同的棒球知识和桌游经验。',`
     ${table(['轮次','参与者','了解棒球','玩过桌游'],[['01','两名队友','是','是'],['02','两名队友','是','否'],['03','两名同学','否','是'],['04','两名同学','否','否']])}
-    <p class="mb-playtest-intro">真实试玩照片尚未提供，以下四处为照片预留位置。</p>${playtestGallery()}
+    <p class="mb-playtest-intro">试玩现场 · 从投打选择、位置标记到阵容调整，记录双人对局的实际过程。</p>${playtestGallery()}
     <div class="mb-test-findings"><div><h3>测试观察：根据前几球判断投球习惯</h3><p>试玩时，玩家会带着前几个打席的印象，判断对方的投球习惯。</p></div><div><h3>测试时长：打席时间随对局变化</h3><p>测试中，一场约 25–30 分钟，一般打席约一分钟；连续擦棒时，打席时间会更长。</p></div></div>
     <div class="mb-prose"><h3>我从这个项目学到的事</h3><p>把棒球做成桌游，需要决定哪些动作值得拆开、哪些细节应该缩短。我现在会沿着玩家的操作检查规则：先知道什么，再决定什么，最后怎样影响球场局面。</p><p>玩家会猜对手习惯，是值得继续观察的现象；它是否稳定、有趣，还需要更具体的试玩记录。脚本模拟可以辅助检查数值，面对面观察则帮助我了解玩家怎样使用规则。</p></div>
    `)}

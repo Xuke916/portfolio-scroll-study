@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
-const base = new URL(process.argv[2] || 'https://xuke916.github.io/portfolio-scroll-study/');
+const base = new URL(process.argv[2] || 'https://xuke916.github.io/');
 assert.ok(base.protocol === 'https:' || ['127.0.0.1', 'localhost'].includes(base.hostname), 'Use HTTPS for the deployed site');
 if (!base.pathname.endsWith('/')) base.pathname += '/';
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');

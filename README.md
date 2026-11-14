@@ -2,8 +2,8 @@
 
 XU KE 的个人作品集。保留道奇蓝主题、首页人物与头盔流体、连续滚动、专业作品、日常生活和 Money Ball 项目页。
 
-- 代码仓库：https://github.com/Xuke916/portfolio-scroll-study
-- 网站：https://xuke916.github.io/portfolio-scroll-study/ （已启用 HTTPS 自动发布）
+- 代码仓库：https://github.com/Xuke916/xuke916.github.io
+- 网站：https://xuke916.github.io/ （已启用 HTTPS 自动发布）
 - 原站点：https://scroll-portfolio-study-1103.wiry-clock-1007.chatgpt.site/
 - [发布状态与更新流程](docs/PUBLISHING.md)
 

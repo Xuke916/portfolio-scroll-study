@@ -3,18 +3,22 @@
 ## 固定目标
 
 - GitHub 账户：`Xuke916`。
-- 仓库：https://github.com/Xuke916/portfolio-scroll-study
+- 仓库：https://github.com/Xuke916/xuke916.github.io
 - 本地 Git 远端名：`github`；发布分支：`main`。
-- GitHub Pages 目标：https://xuke916.github.io/portfolio-scroll-study/
+- GitHub Pages 目标：https://xuke916.github.io/
 - 原站点：https://scroll-portfolio-study-1103.wiry-clock-1007.chatgpt.site/
 - 原站点 ID：`appgprj_6ae9bb5f35c481918485f9d904ba247f`。
-- 当前配置日期：2026-11-10。
+- 当前配置日期：2026-11-14。
 
 ## 当前状态
 
+2026-11-14：用户明确要求结束本地预览阶段，同步累计修改并迁移至短地址 https://xuke916.github.io/。对应仓库已重命名为 `Xuke916/xuke916.github.io`，发布流程和线上资源校验地址改为站点根目录。部署结果以该仓库 GitHub Actions 的检查、发布与线上校验结果为准。
+
+2026-11-13 本地审阅：继续遵守个人介绍修改暂不发布的要求。专业作品简历移除项目介绍右栏，把原“创作记录”移到该位置并更名为“获奖经历”，中英文同步；生活页移除指定投球照、收藏照和整组随笔与粘土模型，分类与计数随之更新。Rewinder 与 Money Ball 沿用魄罗的顶部径向渐变和章节分隔形式，分别采用深红和白蓝配色。完整本地检查通过（15 种尺寸及原有路由、媒体与交互回归）；浏览器复核了电脑简历中英文与两个案例配色，以及 390×844 的 Money Ball、简历和生活浏览。没有提交、推送或发布，本次预览版本为 `review-refinements-v1`。
+
 GitHub 官方浏览器授权已完成，账户为 `Xuke916`。用户于 2026-11-10 明确同意公开该仓库并启用免费 Pages；仓库已改为公开。Pages 使用 GitHub Actions 发布，HTTPS 已启用。
 
-首次同步提交：`b615e89f8543bfede6fe9f02888c7c30279b5da9`。首次完整发布的检查、部署和线上验证均已成功：[GitHub Actions 运行记录](https://github.com/Xuke916/portfolio-scroll-study/actions/runs/42827455436)。
+首次同步提交：`b615e89f8543bfede6fe9f02888c7c30279b5da9`。首次完整发布的检查、部署和线上验证均已成功：[GitHub Actions 运行记录](https://github.com/Xuke916/xuke916.github.io/actions/runs/42827455436)。
 
 - 37 个可发布文件通过静态检查；其中 36 个有内容的线上文件全部返回 HTTP 200，并与源码逐字节一致。`.nojekyll` 是零字节的 Pages 配置文件。
 - 自动检查涵盖 15 种视窗大小（320×568 至 2560×1440）、路由与返回、菜单、滚轮/触控/键盘、流体接管与暂停、头盔描边，以及 Money Ball 示例和图片放大逻辑。
@@ -78,7 +82,7 @@ node preview.mjs --base /portfolio-scroll-study/
 发布后核对：
 
 ```sh
-node scripts/verify-live.mjs https://xuke916.github.io/portfolio-scroll-study/
+node scripts/verify-live.mjs https://xuke916.github.io/
 ```
 
 GitHub 登录由官方浏览器授权完成，凭证存储在系统凭证管理中。不要在聊天、项目文件、提交、工作流日志里粘贴密码或令牌。

@@ -5,7 +5,8 @@ const {JSDOM}=require('jsdom');
 const root=path.resolve(__dirname,'../dist');
 function boot(width,height,hash=''){
  const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://portfolio.test/'+hash,pretendToBeVisual:true});
- const w=dom.window,d=w.document;let viewHeight=height,y=0,clock=0,id=0,frames=new Map();
+ const w=dom.window,d=w.document;let viewHeight=height,y=0,clock=0,id=0,frames=new Map();const layoutObservers=new Set();
+ w.ResizeObserver=class{constructor(callback){this.callback=callback;}observe(){layoutObservers.add(this);}disconnect(){layoutObservers.delete(this);}};
  Object.defineProperties(w,{innerWidth:{value:width,writable:true},innerHeight:{value:height,writable:true},scrollY:{get:()=>y}});
  Object.defineProperty(d.documentElement,'scrollHeight',{get:()=>d.body.classList.contains('detail-mode')?Number(d.querySelector('.detail-route')?.dataset.scrollHeight||viewHeight):viewHeight*8.2});
  Object.defineProperty(w.HTMLElement.prototype,'offsetHeight',{get(){const c=this.classList;return this.id==='viewport-metric'?viewHeight:c.contains('scroll-space')?viewHeight*8.2:c.contains('hero-portrait')?Math.min(viewHeight*1.28,w.innerWidth*2.4)*.75:c.contains('portrait-footer')?viewHeight*1.05:c.contains('project-detail-hero')?viewHeight*1.4:c.contains('project-detail-overview')?viewHeight*.8:c.contains('project-detail-gallery')?viewHeight*1.6:c.contains('project-pagination')?viewHeight*.6:100;}});
@@ -17,8 +18,8 @@ function boot(width,height,hash=''){
  for(const file of ['content.js','app.js','pages.js'])w.eval(fs.readFileSync(path.join(root,file),'utf8'));
  function advance(dt=16.667){clock+=dt;const jobs=[...frames.values()];frames.clear();jobs.forEach(cb=>cb(clock));}
  function flush(){for(let i=0;frames.size&&i<1200;i++)advance();assert.equal(frames.size,0);}
- function resize(width,height,stableHeight=height){w.innerWidth=width;w.innerHeight=height;viewHeight=stableHeight;w.dispatchEvent(new w.Event('resize'));flush();}
- function touch(type,points,target=d.querySelector('.project-art-main')){const e=new w.Event(type,{bubbles:true,cancelable:true});Object.defineProperty(e,'touches',{value:points.map(([clientX,clientY])=>({clientX,clientY}))});target.dispatchEvent(e);return e.defaultPrevented;}
+ function resize(width,height,stableHeight=height){w.innerWidth=width;w.innerHeight=height;viewHeight=stableHeight;for(const observer of layoutObservers)observer.callback();w.dispatchEvent(new w.Event('resize'));flush();}
+ function touch(type,points,target=d.querySelector('.project-art-main,.life-photo-button')){const e=new w.Event(type,{bubbles:true,cancelable:true});Object.defineProperty(e,'touches',{value:points.map(([clientX,clientY])=>({clientX,clientY}))});target.dispatchEvent(e);return e.defaultPrevented;}
  return{w,d,flush,advance,resize,touch};
 }
 for(const [width,height] of [[320,568],[360,800],[375,667],[390,844],[430,932],[600,900],[768,1024],[820,1180],[1024,768],[844,390],[932,430],[1280,720],[1440,900],[1920,1080],[2560,1440]]){
@@ -39,7 +40,16 @@ for(const [width,height] of [[320,568],[360,800],[375,667],[390,844],[430,932],[
  t.resize(rotatedWidth,rotatedHeight);assert.equal(q('.project-current').textContent,'03','rotation preserves the current project');
  q('[data-project-position="3"]').click();flush();assert.equal(q('.project-current').textContent,'04');
  q('.footer-pages [data-open-page="life"]').click();flush();assert.ok(d.body.classList.contains('detail-light'));
- q('.detail-section-nav [data-section="projects"]').click();flush();q('[data-project-position="2"]').click();flush();assert.equal(q('.project-current').textContent,'03');
+ assert.equal(q('.detail-collage'),null,'life daily-record collage is removed without a spacer');
+ assert.deepEqual([...d.querySelectorAll('[data-horizontal-id]')].map(el=>el.dataset.horizontalId),['team','projects'],'team comes before everyday moments');
+ const team=q('[data-horizontal-id="team"]'),moments=q('[data-horizontal-id="projects"]');
+ q('.detail-section-nav [data-section="team"]').click();flush();const teamStart=w.scrollY;
+ team.querySelector('[data-project-position="2"]').click();flush();assert.equal(team.querySelector('.project-current').textContent,'03');
+ assert.equal(moments.querySelector('.project-current').textContent,'01','team browsing does not move the later moments track');
+ t.resize(width,height);assert.equal(team.querySelector('.project-current').textContent,'03','rotation preserves team photo position');t.resize(rotatedWidth,rotatedHeight);assert.equal(team.querySelector('.project-current').textContent,'03');
+ team.querySelector('[data-project-position="0"]').click();flush();assert.equal(team.querySelector('.project-current').textContent,'01');assert.ok(w.scrollY>=teamStart-1);
+ q('.detail-section-nav [data-section="projects"]').click();flush();moments.querySelector('[data-project-position="1"]').click();flush();assert.equal(moments.querySelector('.project-current').textContent,'02');assert.equal(moments.querySelector('[aria-current="true"]').textContent,'我的收藏');
+ t.resize(width,height);assert.equal(moments.querySelector('[aria-current="true"]').textContent,'我的收藏','rotation keeps the same editorial category');t.resize(rotatedWidth,rotatedHeight);assert.equal(moments.querySelector('[aria-current="true"]').textContent,'我的收藏');
  q('.footer-pages [data-footer-home]').click();flush();assert.equal(w.scrollY,0);assert.equal(w.location.hash,'#intro');
  w.scrollTo({top:3.35*rotatedHeight/1.5});flush();const before=q('.hero-scene').style.clipPath;
  t.resize(width,height);assert.equal(q('.hero-scene').style.filter,'grayscale(1)');assert.ok(!q('.hero-portrait').style.transform.includes('NaN'));
@@ -60,4 +70,19 @@ for(const [width,height] of [[320,568],[360,800],[375,667],[390,844],[430,932],[
  console.log('PASS touch direction lock, reverse swipe, click suppression, native vertical input, pinch, cover tap and project resize');w.close();
 }
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.ok(html.includes('viewport-fit=cover')&&!html.includes('user-scalable=no'));assert.ok(html.includes('responsive.css'));
+{
+ const t=boot(390,844,'#life'),{w,d,flush,touch,advance}=t;
+ const team=d.querySelector('[data-horizontal-id="team"]'),moments=d.querySelector('[data-horizontal-id="projects"]');
+ for(const [id,collection] of [['team',team],['projects',moments]]){
+  d.querySelector(`.detail-section-nav [data-section="${id}"]`).click();flush();const start=w.scrollY;
+  const photo=collection.querySelector('.project-art-main,.life-photo-button');
+  touch('touchstart',[[330,450]],photo);advance(20);assert.equal(touch('touchmove',[[150,452]],photo),true);advance(150);touch('touchend',[]);photo.click();assert.equal(d.querySelector('dialog').open,false,'swipe does not accidentally open a photo');flush();assert.ok(w.scrollY>start,`${id} supports its own horizontal swipe`);
+  touch('touchstart',[[80,450]],photo);advance(20);touch('touchmove',[[330,452]],photo);advance(150);touch('touchend',[]);flush();assert.equal(w.scrollY,start,`${id} reverses back to its first photo`);
+  touch('touchstart',[[150,450]],photo);assert.equal(touch('touchmove',[[153,330]],photo),false,'vertical scrolling remains native');touch('touchend',[]);
+  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',cancelable:true}));flush();assert.equal(collection.querySelector('.project-current').textContent,'02',`${id} keyboard navigation is scoped`);
+ }
+ assert.equal(team.querySelector('.project-current').textContent,'07','earlier team track is finished while moments are browsed');
+ assert.equal(moments.querySelector('.project-current').textContent,'02');
+ console.log('PASS independent team and moments swipe, reverse, native vertical input and keyboard navigation');w.close();
+}
 console.log('PASS safe-area viewport and browser zoom remain enabled');
